@@ -17,4 +17,4 @@ Some characteristics:
 - grep-it.sh is the main focus of the project and is usually best maintained.
 - Tested under MAC OSX ONLY (with gnu-grep from mac ports)
 
-This scripts aren't very advanced - exactly what's needed if you don't know where to start.
+These scripts aren't very advanced - exactly what's needed if you don't know where to start.

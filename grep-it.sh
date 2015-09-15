@@ -1866,7 +1866,7 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     search "SHA1. Security depends heavily on usage and what is secured." \
     'SHA1' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'sha-?1' \
+    'SHA-?1' \
     "3_general_ciphers_sha1_uppercase.txt"
     
     search "SHA1. Security depends heavily on usage and what is secured." \

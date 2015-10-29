@@ -1,0 +1,196 @@
+#Not really a comprehensive list of tests for all greps, but for a couple of them at least
+#Java:
+String bla = "This is a Java String";
+import javax.crypto.bla;
+import org.bouncycastle.bla;
+new SecretKeySpec(
+.generateKey()
+KeyGenerator.getInstance(
+messagedigest
+KeyPairGenerator(
+toString(  )    ==
+==     toString()
+"      ==
+==     "
+.equals(
+.equalsIgnoreCase(
+executeBlaBla(
+addBatch(
+prepareStatement(
+.setHeader(
+.addCookie(
+.sendRedirect(
+.addHeader(
+.getHeaders(
+.getCookies(
+.getRemoteHost(
+.getContentType(
+.getLocalName(
+.getParameterBLABLA(
+String.format(variable)
+String.format(\"bla-%s\"+taintedInput, variable);
+ProcessBuilder
+setMaxInactiveInterval()
+@Entity
+@ManyToOne
+@OneToMany
+@OneToOne
+@Table
+@Column
+java.net.
+java.io.
+javax.servlet
+org.apache.http
+string password
+string secret
+string key
+string cvv
+string user
+string passcode
+string passphrase
+string user
+string pin
+string credit
+SSLSocketFactory
+\u0041\u0042
+#JSP:
+.sendRedirect(
+.forward(
+:forward
+escape   =  '  false
+escape   =  "  false
+escapeXml  =  '  false
+escapeXml  =  "  false
+<%= ABCZ_abc_123_XYZ_xyz_456.getABCZ_abc_123_XYZ_xyz_456(LALALALALALALALALALA) %>
+.getParameter(
+out.print("<adfasdfvxcv123 property='"+something_from_java);
+out.println("abcdef_abc123" + something_from_java);
+<s:file attribute
+#Spring:
+DataBinder.setAllowedFields
+stripUnsafeHTML
+stripEncodeUnsafeHTML
+#Struts:
+validate  =  'false
+struts.devMode
+#.NET:
+EnableViewStateMac
+ValidateRequest
+int unsafe bla
+Marshal
+#PHP:
+$_GET
+$_POST
+$_COOKIE
+$_REQUEST
+popen(
+proc_
+passthru(
+escapeshell
+system(
+fopen(
+file_get_contents (
+imagecreatefrom
+mkdir (
+chmod (
+chown (
+file (
+link (
+rmdir (
+CURLOPT_SSL_VERIFYPEER
+CURLOPT_SSL_VERIFYHOST
+gnutls_certificate_verify_peers
+fsockopen (
+include (
+include_once (
+require (
+require_once (
+echo
+echo "blablla" + $POST
+echo "blablla" + $GET
+echo "blablla" + $COOKIE
+echo "blablla" + $REQUEST
+print
+print "blablla" + $POST
+print "blablla" + $GET
+print "blablla" + $COOKIE
+print "blablla" + $REQUEST
+pg_query (
+mysqli_function(
+mysql_function(
+mssql_function(
+odbc_exec(
+rand(
+extract(
+assert (
+preg_replace (
+#HTML:
+enctype="multipart/form-data"
+type=file
+autocomplete
+
+
+False positive: String.format("static bla", variable) --> can not be a string format vuln
+
+
+False positive: MappingCode --> pin.code false positive
+False positive: HashIterator --> shit false positive
+
+
+
+.exec(
+
+.printStackTrace(
+
+NSFileProtection
+NSFileManager
+NSPersistantStoreCoordinator
+malloc(
+realloc(
+kSecAttrAccessible
+SecItemAdd
+KeychainItemWrapper
+Security.h
+NSLog(
+initWithFormat:
+informativeTextWithFormat:
+format:
+stringWithFormat:
+appendFormat:
+predicateWithFormat:
+NSRunAlertPanel
+handleOpenURL:
+openURL:
+adsfasdf@adsfasdf.com
+hack
+crack
+exploit
+bypass
+backdoor
+backd00r
+https://gasdgas.com
+http://abc.do
+memcpy(
+strcat(
+strcpy(
+strncat(
+strncpy(
+sprintf(
+gets(
+defaultApassword
+hashAconstant
+passAphrase
+salt
+encryptionkey
+encryptAkey
+BEGIN CERTIFICATE---
+PRIVATE KEY---
+rootAdetection
+rootedDevice
+SELECT adfasdfsd FROM
+sqlite
+stoopid
+fuck
+shit
+crap
+`between backticks`

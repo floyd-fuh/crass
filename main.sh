@@ -31,8 +31,10 @@ if [ $# -eq 1 ]; then
     
     echo "[+] Invoking ./bloat-it.sh \"$DIR_MODIFIED\""
     ./bloat-it.sh "$DIR_MODIFIED"
-    echo "[+] Invoking ./clean-it.sh \"$DIR_MODIFIED\""
-    ./clean-it.sh "$DIR_MODIFIED"
+    echo "Info: We are not cleaning (clean-it.sh) when analyzing one directory (but when diffing two), because important info might get lost. See this message in main.sh."
+    #You can uncomment this to clean the directory
+    #echo "[+] Invoking ./clean-it.sh \"$DIR_MODIFIED\""
+    #./clean-it.sh "$DIR_MODIFIED"
     echo "[+] Invoking ./find-it.sh \"$DIR_MODIFIED\""
     ./find-it.sh "$DIR_MODIFIED" "./find-output-modified"
     echo "[+] Invoking ./grep-it.sh \"$DIR_MODIFIED\""

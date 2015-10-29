@@ -27,18 +27,18 @@ UNZIP_CMD="unzip"
 JAR_CMD="jar"
 JAR_CMD="tar"
 GZIP_CMD="gzip"
+JAR_DECOMPILE="./java-decompile.sh"
 
-if [ -e ./java_decompile.sh ]
+if [ -e $JAR_DECOMPILE ]
 then
-    JAR_BEHAVIOR="./java_decompile.sh"
+    DECOMPILE_POSSIBLE=true
 else
     echo "###"
-    echo "# Warning: You haven't chosen how to decompile .jar files."
-    echo "# Please copy one of the java_decompile-*.sh files to java_decompile.sh"
-    echo "# for now .jar are going to be unzipped and nothing more."
+    echo "# Warning: You haven't chosen how to decompile Java files."
+    echo "# Please copy one of the java-decompile-*.sh files to java-decompile.sh"
+    echo "# for now .jar and .war are going to be unpacked, but not decompiled."
     echo "###"
-    sleep 1
-    JAR_BEHAVIOR="$JAR_CMD xf"
+    DECOMPILE_POSSIBLE=false
 fi
 
 
@@ -54,8 +54,31 @@ do
     echo "#ungzip all gz files and delete afterwards"
     find "$DIR" -depth -iname '*.gz' -exec echo '#Unpacking {}' \; -execdir $GZIP_CMD -d '{}' \; -delete
     
-    echo "#handling all jar files and delete afterwards"
-    find "$DIR" -depth -iname '*.jar' -exec echo '#Unpacking {}' \; -execdir $JAR_BEHAVIOR '{}' \; -delete
+    if [ "$DECOMPILE_POSSIBLE" = true ] ; then
+        #TODO: At the moment jd-core does not support war files, although it's exactly the same as a jar file, see bug report at https://github.com/nviennot/jd-core-java/issues/24
+        #echo "#decompiling all war files"
+        ##We need to find ./java-decompile.sh, so no execdir here
+        ##We don't delete them, as we also need the rest of the (meta) data (not only class files in decompiled form)
+        #find "$DIR" -depth -iname '*.war' -exec echo '#Decompiling {}' \; -exec $JAR_DECOMPILE '{}' \;
+        
+        echo "#decompiling all jar files"
+        #We need to find ./java-decompile.sh, so no execdir here
+        #We don't delete them, as we also need the rest of the (meta) data (not only class files in decompiled form)
+        find "$DIR" -depth -iname '*.jar' -exec echo '#Decompiling {}' \; -exec $JAR_DECOMPILE '{}' \;
+        
+        #jd-core does not support decompilation of a single class file directly, it must be in a jar *sigh*
+        #What this means at the moment is that you have to pack them into a jar file :(
+        #Side note: You can just pack an *entire* directory into one jar file and jd-core will happily decompile all contained class files
+        #echo "#handling all class files and delete afterwards"
+        ##We need to find ./java-decompile.sh, so no execdir here
+        #find "$DIR" -depth -iname '*.class' -exec echo '#Unpacking/Decompiling {}' \; -exec $JAR_DECOMPILE '{}' \; -delete
+    fi
+    
+    echo "#unpacking all war files and delete afterwards"
+    find "$DIR" -depth -iname '*.war' -exec echo '#Unpacking {}' \; -execdir $JAR_CMD xf '{}' \; -delete
+
+    echo "#unpacking all jar files and delete afterwards"
+    find "$DIR" -depth -iname '*.jar' -exec echo '#Unpacking {}' \; -execdir $JAR_CMD xf '{}' \; -delete
     
 done
 

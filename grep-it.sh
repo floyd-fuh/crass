@@ -57,7 +57,7 @@ BACKGROUND="false"
 
 #In my opinion I would always leave all the options below here on true,
 #because I did find strange android code in iphone apps and vice versa. I would only
-#change it if grep needs very long, you are greping a couple of hundred apps
+#change it if grep needs very long, you are greping a lot of stuff
 #or if you have any other performance issues with this script.
 DO_JAVA="true"
 DO_JSP="true"
@@ -100,6 +100,7 @@ DO_GENERAL="true"
 # - Don't use * in regex but use {0,X} instead. See WILDCARD_ variables below for configurable values of X.
 # - make sure functions calls with space before bracket will be found, e.g. "extract (bla)" is allowed in PHP
 # - If in doubt, prefer to make two regex and output files rather then joining regexes with |. If one produces false positives it is really annoying to search for the true positives of the other regex.
+# - If your regex matches less than 6 characters (eg. "salt"), do not make it case insensitive as this usually produces more fals positives. Rather split into several regexes (eg. one file with case-sensitive matches for "[Ss]alt", one file with case-sensitive matches for "SALT". This way we remove false positives for removesAlternativeName and such). 
 # - Take care with single/double quoted strings. From the bash manual:
 # 3.1.2.2 Single Quotes
 # Enclosing characters in single quotes (‘'’) preserves the literal value of each character within the quotes. A single quote may not occur between single quotes, even when preceded by a backslash.
@@ -558,6 +559,25 @@ if [ "$DO_JAVA" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '@SuppressLint' \
     "2_java_suppresslint.txt"
+    
+    search 'Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ for example' \
+    'new ObjectOutputStream(abc);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'new ObjectOutputStream' \
+    "2_java_objectOutputStream.txt"
+    
+    search 'Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ for example' \
+    'abc.writeObject(def);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.writeObject\(' \
+    "2_java_writeObject.txt"
+    
+    search 'Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ for example' \
+    'abc.readObject(def);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.readObject\(' \
+    "1_java_readObject.txt"
+    
     
 fi
 
@@ -1964,11 +1984,16 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     "-i"
     
     search "Salt for a hashing algorithm?" \
-    'Salt' \
+    'Salt or salt' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "Salt" \
-    "5_general_salt.txt" \
-    "-i"
+    "[Ss]alt" \
+    "5_general_salt1.txt"
+    
+    search "Salt for a hashing algorithm?" \
+    'SALT' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "SALT" \
+    "5_general_salt2.txt"
     
     search "Default password" \
     'default-password' \
@@ -2300,7 +2325,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     search "SQL SELECT statement" \
     'SELECT EXAMPLE, ABC, DEF FROM TABLE' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "SELECT.{0,$WILDCARD_LONG}FROM" \
+    "SELECT\s.{0,$WILDCARD_LONG}FROM" \
     "3_general_sql_select.txt" \
     "-i"
     

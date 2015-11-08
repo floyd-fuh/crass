@@ -564,20 +564,50 @@ if [ "$DO_JAVA" = "true" ]; then
     'new ObjectOutputStream(abc);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'new ObjectOutputStream' \
-    "2_java_objectOutputStream.txt"
+    "2_java_serialization-objectOutputStream.txt"
     
     search 'Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ for example' \
     'abc.writeObject(def);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.writeObject\(' \
-    "2_java_writeObject.txt"
+    "2_java_serialization-writeObject.txt"
     
     search 'Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ for example' \
     'abc.readObject(def);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.readObject\(' \
-    "1_java_readObject.txt"
+    "1_java_serialization-readObject.txt"
     
+    search 'Java serialized data? Usually Java serialized data in base64 format starts with rO0 or non-base64 with hex ACED0005. Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ for example' \
+    'rO0ABXNyABpodWRzb24ucmVtb3RpbmcuQ2FwYWJpbGl0eQAAAAAAAAABAgABSgAEbWFza3hwAAAAAAAAAJP4=' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'rO0' \
+    "2_java_serialization-base64serialized-data.txt"
+    
+    search 'Java serialized data? Usually Java serialized data in base64 format starts with rO0 or non-base64 with hex ACED0005. Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ for example' \
+    'rO0ABXNyABpodWRzb24ucmVtb3RpbmcuQ2FwYWJpbGl0eQAAAAAAAAABAgABSgAEbWFza3hwAAAAAAAAAJP4=' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'AC ?ED ?00 ?05' \
+    "2_java_serialization-hexserialized-data.txt" \
+    "-i"
+    
+    search 'Java serialized data? Usually Java serialized data in base64 format starts with rO0 or non-base64 with hex ACED0005. Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ for example' \
+    'rO0ABXNyABpodWRzb24ucmVtb3RpbmcuQ2FwYWJpbGl0eQAAAAAAAAABAgABSgAEbWFza3hwAAAAAAAAAJP4=' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\xAC\xED\x00\x05" \
+    "2_java_serialization-serialized-data.txt"
+    
+    search 'JMXInvokerServlet is a JBoss interface that is usually vulnerable to Java deserialization attacks. There are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ for example' \
+    'JMXInvokerServlet' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'JMXInvokerServlet' \
+    "2_java_serialization-serialized-data.txt"
+    
+    search 'InvokerTransformer is a vulnerable commons collection class that can be exploited if the web application has a Java object deserialization interface/issue, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ for example' \
+    'InvokerTransformer' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'InvokerTransformer' \
+    "2_java_serialization-invokertransformer.txt"
     
 fi
 

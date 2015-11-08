@@ -224,6 +224,17 @@ if [ "$DO_FILE_NAME" = "true" ]; then
     echo "Searching for results for $OUTFILE"
     $FIND_COMMAND "$SEARCH_FOLDER" -iname 'web.xml' >> $TARGET/$OUTFILE
     
+    OUTFILE="1_filename_commons-collection.txt"
+    echo "# Info: commons-collection can be used to exploit deserialization issues. Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ for example" >> $TARGET/$OUTFILE
+    echo "# Filename: $OUTFILE" >> "$TARGET/$OUTFILE"
+    echo "# Search: find -iname '*commons*collection*'" >> "$TARGET/$OUTFILE"
+    echo "Searching for results for $OUTFILE"
+    $FIND_COMMAND "$SEARCH_FOLDER" -iname '*commons*collection*' >> $TARGET/$OUTFILE
+    
+    #TODO filenames:
+    #wsadmin.properties configuration file of Websphere
+    
+    
     #TODO:
     #random
     #sql

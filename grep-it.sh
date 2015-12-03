@@ -200,20 +200,20 @@ if [ "$DO_JAVA" = "true" ]; then
     'String bla = "This is a Java String";' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '"[^"]{4,500}"' \
-    "3_java_strings.txt" \
+    "5_java_strings.txt" \
     "-o" #Special case, we only want to show the strings themselves, therefore -o to output the match only
     
     search "All javax.crypto usage" \
     'import javax.crypto.bla;' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'javax.crypto' \
-    "3_java_crypto_javax-crypto.txt"
+    "4_java_crypto_javax-crypto.txt"
     
     search "Bouncycastle is a common Java crypto provider" \
     'import org.bouncycastle.bla;' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "bouncy.{0,$WILDCARD_SHORT}castle" \
-    "3_java_crypto_bouncycastle.txt" \
+    "4_java_crypto_bouncycastle.txt" \
     "-i"
     
     search "SecretKeySpec is used to initialize a new encryption key: instance of SecretKey, often passed in the first argument as a byte[], which is the actual key" \
@@ -281,23 +281,35 @@ if [ "$DO_JAVA" = "true" ]; then
     "==\s{0,$WILDCARD_SHORT}\"" \
     "4_java_string_comparison3.txt"
     
+    search "Problem with equals and equalsIgnoreCase for checking user supplied passwords or Hashes or HMACs or XYZ is that it is not a time-consistent method, therefore allowing timing attacks." \
+    '.equals(hash_from_request)' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "equals\(.{0,$WILDCARD_SHORT}[Hh][Aa][Ss][Hh]" \
+    "2_java_string_comparison_equals_hash.txt"
+    
+    search "Problem with equals and equalsIgnoreCase for checking user supplied passwords or Hashes or HMACs or XYZ is that it is not a time-consistent method, therefore allowing timing attacks." \
+    '.equalsIgnoreCase(hash_from_request' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'equalsIgnoreCase\(.{0,$WILDCARD_SHORT}[Hh][Aa][Ss][Hh]' \
+    "2_java_string_comparison_equalsIgnoreCase_hash.txt"
+    
     search "String comparisons: Filters and conditional decisions on user input should better be done with .equalsIgnoreCase() in Java in most cases, so that the clause doesn't miss something (e.g. think about string comparison in filters) or long switch case. Another problem with equals and equalsIgnoreCase for checking user supplied passwords or Hashes or HMACs or XYZ is that it is not a time-consistent method, therefore allowing timing attacks." \
     '.equals(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'equals\(' \
-    "2_java_string_comparison_equals.txt"
+    "4_java_string_comparison_equals.txt"
     
     search "String comparisons: Filters and conditional decisions on user input should better be done with .equalsIgnoreCase() in Java in most cases, so that the clause doesn't miss something (e.g. think about string comparison in filters) or long switch case. Another problem with equals and equalsIgnoreCase for checking user supplied passwords or Hashes or HMACs or XYZ is that it is not a time-consistent method, therefore allowing timing attacks." \
     '.equalsIgnoreCase(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'equalsIgnoreCase\(' \
-    "2_java_string_comparison_equalsIgnoreCase.txt"
+    "4_java_string_comparison_equalsIgnoreCase.txt"
     
-    search "The syntax for SQL executions start with execute." \
+    search "The syntax for SQL executions start with execute and this should as well catch generic execute calls." \
     'executeBlaBla(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "execute.{0,$WILDCARD_SHORT}\(" \
-    "2_java_sql_execute.txt"
+    "3_java_sql_execute.txt"
     
     search "SQL syntax" \
     'addBatch(' \
@@ -715,7 +727,7 @@ if [ "$DO_SPRING" = "true" ]; then
     search "RequestMapping method of the Spring Surf Framework to see how request URLs are mapped to classes." \
     '@RequestMapping(method=RequestMethod.GET, value={"/user","/user/{id}"})' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    '\@RequestMapping\(' \
+    '@RequestMapping\(' \
     "3_java_spring_requestMapping.txt"
     
     search "ServletMapping XML of the Spring Surf Framework to see how request URLs are mapped to classes." \
@@ -1164,73 +1176,73 @@ if [ "$DO_JAVASCRIPT" = "true" ]; then
     'location.hash' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'location\.hash' \
-    "4_general_dom_xss_location-hash.txt"
+    "4_js_dom_xss_location-hash.txt"
     
     search "Location href: DOM-based XSS source/sink." \
     'location.href' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'location\.href' \
-    "4_general_dom_xss_location-href.txt"
+    "4_js_dom_xss_location-href.txt"
     
     search "Location pathname: DOM-based XSS source/sink." \
     'location.pathname' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'location\.pathname' \
-    "4_general_dom_xss_location-pathname.txt"
+    "4_js_dom_xss_location-pathname.txt"
     
     search "Location search: DOM-based XSS source/sink." \
     'location.search' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'location\.search' \
-    "4_general_dom_xss_location-search.txt"
+    "4_js_dom_xss_location-search.txt"
     
     search "appendChild: DOM-based XSS sink." \
     '.appendChild(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.appendChild\(' \
-    "4_general_dom_xss_appendChild.txt"
+    "4_js_dom_xss_appendChild.txt"
     
     search "Document location: DOM-based XSS source/sink." \
     'document.location' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'document\.location' \
-    "4_general_dom_xss_document_location.txt"
+    "4_js_dom_xss_document_location.txt"
     
     search "Window location: DOM-based XSS source/sink." \
     'window.location' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'window\.location' \
-    "4_general_dom_xss_window-location.txt"
+    "4_js_dom_xss_window-location.txt"
     
     search "Document referrer: DOM-based XSS source/sink." \
     'document.referrer' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'document\.referrer' \
-    "4_general_dom_xss_document-referrer.txt"
+    "4_js_dom_xss_document-referrer.txt"
     
     search "Document URL: DOM-based XSS source/sink." \
     'document.URL' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'document\.URL' \
-    "4_general_dom_xss_document-URL.txt"
+    "4_js_dom_xss_document-URL.txt"
     
     search "Document Write and variants of it: DOM-based XSS source/sink." \
     'document.writeln(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'document\.writel?n?\(' \
-    "4_general_dom_xss_document-write.txt"
+    "4_js_dom_xss_document-write.txt"
     
     search "InnerHTML: DOM-based XSS source/sink." \
     '.innerHTML =' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.innerHTML\s{0,$WILDCARD_SHORT}=" \
-    "4_general_dom_xss_innerHTML.txt"
+    "4_js_dom_xss_innerHTML.txt"
     
     search "OuterHTML: DOM-based XSS source/sink." \
     '.outerHTML =' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.outerHTML\s{0,$WILDCARD_SHORT}=" \
-    "4_general_dom_xss_outerHTML.txt"
+    "4_js_dom_xss_outerHTML.txt"
 
 fi
 
@@ -1326,7 +1338,7 @@ if [ "$DO_MOBILE" = "true" ]; then
     "-i"
     
     search "Root detection." \
-    'root device' \
+    'RootedDevice' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "root.{0,$WILDCARD_SHORT}Device" \
     "2_general_mobile_root_detection_root-device.txt" \
@@ -1595,6 +1607,8 @@ if [ "$DO_ANDROID" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "BackupAgent" \
     "3_android_backupAgent.txt"
+    
+    
 fi
 
 
@@ -1765,61 +1779,61 @@ if [ "$DO_C" = "true" ]; then
     'malloc(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'malloc\(' \
-    "4_general_malloc.txt"
+    "4_c_malloc.txt"
     
     search "realloc. Rather rare bug, but see issues CVE-2010-0041 and CVE-2010-0042. Uninitialized memory access issues? Could also happen in java/android native code. Also developers should check return codes." \
     'realloc(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'realloc\(' \
-    "4_general_realloc.txt"
+    "4_c_realloc.txt"
     
     search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
     'memcpy(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'memcpy\(' \
-    "2_general_insecure_c_functions_memcpy.txt"
+    "2_c_insecure_c_functions_memcpy.txt"
     
     search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
     'memset(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'memset\(' \
-    "2_general_insecure_c_functions_memset.txt"
+    "2_c_insecure_c_functions_memset.txt"
     
     search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
     'strncat(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'strn?cat\(' \
-    "2_general_insecure_c_functions_strcat_strncat.txt"
+    "2_c_insecure_c_functions_strcat_strncat.txt"
     
     search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
     'strncpy(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'strn?cpy\(' \
-    "2_general_insecure_c_functions_strcpy_strncpy.txt"
+    "2_c_insecure_c_functions_strcpy_strncpy.txt"
     
     search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
     'snprintf(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'sn?printf\(' \
-    "2_general_insecure_c_functions_sprintf_snprintf.txt"
+    "2_c_insecure_c_functions_sprintf_snprintf.txt"
     
     search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
     'fnprintf(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'fn?printf\(' \
-    "2_general_insecure_c_functions_fprintf_fnprintf.txt"
+    "2_c_insecure_c_functions_fprintf_fnprintf.txt"
     
     search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
     'fscanf(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'f?scanf\(' \
-    "2_general_insecure_c_functions_fscanf_scanf.txt"
+    "2_c_insecure_c_functions_fscanf_scanf.txt"
     
     search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
     'gets(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '[^a-zA-Z_-]gets\(' \
-    "2_general_insecure_c_functions_gets.txt"
+    "2_c_insecure_c_functions_gets.txt"
     
 fi
 
@@ -1865,91 +1879,91 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     'crypt(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'crypt\(' \
-    "3_general_crypt_call.txt" \
+    "3_cryptocred_crypt_call.txt" \
     "-i"
     
     search "Rot32 is really really bad obfuscation and has nothing to do with crypto." \
     'ROT32' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'ROT32' \
-    "3_general_ciphers_rot32.txt" \
+    "3_cryptocred_ciphers_rot32.txt" \
     "-i"
     
     search "RC2 cipher. Security depends heavily on usage and what is secured." \
     'RC2' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'RC2' \
-    "3_general_ciphers_rc2.txt" \
+    "3_cryptocred_ciphers_rc2.txt" \
     "-i"
     
     search "RC4 cipher. Security depends heavily on usage and what is secured." \
     'RC4' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'RC4' \
-    "3_general_ciphers_rc4.txt"
+    "3_cryptocred_ciphers_rc4.txt"
     
     search "CRC32 is a checksum algorithm. Security depends heavily on usage and what is secured." \
     'CRC32' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'CRC32' \
-    "3_general_ciphers_crc32.txt" \
+    "3_cryptocred_ciphers_crc32.txt" \
     "-i"
     
     search "DES cipher. Security depends heavily on usage and what is secured." \
     'DES' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'DES' \
-    "3_general_ciphers_des.txt"
+    "3_cryptocred_ciphers_des.txt"
     
     search "MD2. Security depends heavily on usage and what is secured." \
     'MD2' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'MD2' \
-    "3_general_ciphers_md2.txt"
+    "3_cryptocred_ciphers_md2.txt"
     
     search "MD5. Security depends heavily on usage and what is secured." \
     'MD5' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'MD5' \
-    "3_general_ciphers_md5.txt"
+    "3_cryptocred_ciphers_md5.txt"
     
     search "SHA1. Security depends heavily on usage and what is secured." \
     'SHA1' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'SHA-?1' \
-    "3_general_ciphers_sha1_uppercase.txt"
+    "3_cryptocred_ciphers_sha1_uppercase.txt"
     
     search "SHA1. Security depends heavily on usage and what is secured." \
     'sha1' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'sha-?1' \
-    "3_general_ciphers_sha1_lowercase.txt"
+    "3_cryptocred_ciphers_sha1_lowercase.txt"
     
     search "SHA256. Security depends heavily on usage and what is secured." \
     'SHA256' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'SHA256' \
-    "3_general_ciphers_sha256.txt" \
+    "3_cryptocred_ciphers_sha256.txt" \
     "-i"
     
     search "SHA256. Security depends heavily on usage and what is secured." \
     'SHA512' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'SHA512' \
-    "3_general_ciphers_sha512.txt" \
+    "3_cryptocred_ciphers_sha512.txt" \
     "-i"
     
     search "NTLM. Security depends heavily on usage and what is secured." \
     'NTLM' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'NTLM' \
-    "3_general_ciphers_ntlm.txt"
+    "3_cryptocred_ciphers_ntlm.txt"
     
     search "Kerberos. Security depends heavily on usage and what is secured." \
     'Kerberos' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'kerberos' \
-    "3_general_ciphers_kerberos.txt" \
+    "3_cryptocred_ciphers_kerberos.txt" \
     "-i"
     
     #take care with the next regex, ! has a special meaning in double quoted strings but not in single quoted
@@ -1957,170 +1971,170 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     'hash_value' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'hash(?!(table|map|set|code))' \
-    "5_general_hash.txt" \
+    "5_cryptocred_hash.txt" \
     "-i"
     
     search 'Find *nix passwd or shadow files.' \
     '_xcsbuildagent:*:239:239:Xcode Server Build Agent:/var/empty:/usr/bin/false' \
-    '/Users/eh2pasz/workspace/ios/CCB/CCB/Classes/CBSaver.h:23:46: note: passing argument to parameter "name" here^M+ (NSString *)loadStringWithName:(NSString *)name;' \
-    "[^:]{1,$WILDCARD_SHORT}:[^:]{1,$WILDCARD_LONG}:\d{0,$WILDCARD_SHORT}:\d{0,$WILDCARD_SHORT}:[^:]{0,$WILDCARD_LONG}:[^:]{0,$WILDCARD_LONG}:" \
-    "1_general_passwd_or_shadow_files.txt" \
+    '/Users/eh2pasz/workspace/ios/CCB/CCB/Classes/CBSaver.h:23:46: note: passing argument to parameter "name" here^M+ (NSString *)loadStringWithName:(NSString *)name; 1b:ee:24:46:0c:17:' \
+    "[^:]{3,$WILDCARD_SHORT}:[^:]{1,$WILDCARD_LONG}:\d{0,$WILDCARD_SHORT}:\d{0,$WILDCARD_SHORT}:[^:]{0,$WILDCARD_LONG}:[^:]{0,$WILDCARD_LONG}:" \
+    "1_cryptocred_passwd_or_shadow_files.txt" \
     "-i"
     
     search "Encryption key and variants of it" \
     'encrypt the key' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "encrypt.{0,$WILDCARD_SHORT}key" \
-    "2_general_encryption_key.txt" \
+    "2_cryptocred_encryption_key.txt" \
     "-i"
     
     search "Narrow search for certificate and keys specifics of base64 encoded format" \
     'BEGIN CERTIFICATE' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'BEGIN CERTIFICATE' \
-    "1_general_certificates_and_keys_narrow_begin-certificate.txt"
+    "1_cryptocred_certificates_and_keys_narrow_begin-certificate.txt"
     
     search "Narrow search for certificate and keys specifics of base64 encoded format" \
     'PRIVATE KEY' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'PRIVATE KEY' \
-    "1_general_certificates_and_keys_narrow_private-key.txt"
+    "1_cryptocred_certificates_and_keys_narrow_private-key.txt"
     
     search "Narrow search for certificate and keys specifics of base64 encoded format" \
     'PUBLIC KEY' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'PUBLIC KEY' \
-    "1_general_certificates_and_keys_narrow_public-key.txt"
+    "1_cryptocred_certificates_and_keys_narrow_public-key.txt"
     
     search "Wide search for certificate and keys specifics of base64 encoded format" \
     'begin certificate' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "BEGIN.{0,$WILDCARD_SHORT}CERTIFICATE" \
-    "4_general_certificates_and_keys_wide_begin-certificate.txt" \
+    "4_cryptocred_certificates_and_keys_wide_begin-certificate.txt" \
     "-i"
     
     search "Wide search for certificate and keys specifics of base64 encoded format" \
     'private key' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "PRIVATE{0,$WILDCARD_SHORT}KEY" \
-    "4_general_certificates_and_keys_wide_private-key.txt" \
+    "4_cryptocred_certificates_and_keys_wide_private-key.txt" \
     "-i"
     
     search "Wide search for certificate and keys specifics of base64 encoded format" \
     'public key' \
     'public String getBlaKey' \
     "PUBLIC.{0,$WILDCARD_SHORT}KEY" \
-    "4_general_certificates_and_keys_wide_public-key.txt" \
+    "4_cryptocred_certificates_and_keys_wide_public-key.txt" \
     "-i"
     
     search "Salt for a hashing algorithm?" \
     'Salt or salt' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "[Ss]alt" \
-    "5_general_salt1.txt"
+    "5_cryptocred_salt1.txt"
     
     search "Salt for a hashing algorithm?" \
     'SALT' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "SALT" \
-    "5_general_salt2.txt"
+    "5_cryptocred_salt2.txt"
     
     search "Default password" \
     'default-password' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'default.?password' \
-    "2_general_default_password.txt" \
+    "2_cryptocred_default_password.txt" \
     "-i"
     
     search "Password and variants of it" \
     'pass-word or passwd' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'pass.?wo?r?d' \
-    "2_general_password.txt" \
+    "2_cryptocred_password.txt" \
     "-i"
     
     search "Credentials. Included everything 'creden' because some programers write credencials instead of credentials and such things." \
     'credentials' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'creden' \
-    "3_general_credentials.txt" \
+    "3_cryptocred_credentials.txt" \
     "-i"
     
     search "Passcode and variants of it" \
     'passcode' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "pass.?code" \
-    "3_general_passcode.txt" \
+    "3_cryptocred_passcode.txt" \
     "-i"
     
     search "Passphrase and variants of it" \
     'passphrase' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "pass.?phrase" \
-    "3_general_passphrase.txt" \
+    "3_cryptocred_passphrase.txt" \
     "-i"
     
     search "Secret and variants of it" \
     'secret' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "se?3?cre?3?t" \
-    "3_general_secret.txt" \
+    "3_cryptocred_secret.txt" \
     "-i"
     
     search "PIN code and variants of it" \
     'pin code' \
     'mapping between error codes, pin.hashCode' \
     "pin.{0,$WILDCARD_SHORT}code" \
-    "2_general_pin_code.txt" \
+    "2_cryptocred_pin_code.txt" \
     "-i"
     
     search "Proxy-Authorization" \
     'ProxyAuthorisation' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'Proxy.?Authoris?z?ation' \
-    "4_general_proxy-authorization.txt" \
+    "4_cryptocred_proxy-authorization.txt" \
     "-i"
     
     search "Authorization" \
     'Authorisation' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'Authoris?z?ation' \
-    "4_general_authorization.txt" \
+    "4_cryptocred_authorization.txt" \
     "-i"
     
     search "Authentication" \
     'Authentication' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'Authentication' \
-    "4_general_authentication.txt" \
+    "4_cryptocred_authentication.txt" \
     "-i"
     
     search "SSL usage with requireSSL" \
     'requireSSL' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "require.{0,$WILDCARD_SHORT}SSL" \
-    "3_general_ssl_usage_require-ssl.txt" \
+    "3_cryptocred_ssl_usage_require-ssl.txt" \
     "-i"
     
     search "SSL usage with useSSL" \
     'use ssl' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "use.{0,$WILDCARD_SHORT}SSL" \
-    "3_general_ssl_usage_use-ssl.txt" \
+    "3_cryptocred_ssl_usage_use-ssl.txt" \
     "-i"
     
     search "TLS usage with require TLS" \
     'require TLS' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "require.{0,$WILDCARD_SHORT}TLS" \
-    "3_general_tls_usage_require-tls.txt" \
+    "3_cryptocred_tls_usage_require-tls.txt" \
     "-i"
     
     search "TLS usage with use TLS" \
     'use TLS' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "use.{0,$WILDCARD_SHORT}TLS" \
-    "3_general_tls_usage_use-tls.txt" \
+    "3_cryptocred_tls_usage_use-tls.txt" \
     "-i"
     
 fi
@@ -2163,6 +2177,13 @@ if [ "$DO_GENERAL" = "true" ]; then
     "4_general_relative_paths.txt" \
     "-i"
     
+    search "Search for the word credit card" \
+    'credit-card' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'credit.?card' \
+    "3_general_creditcard.txt" \
+    "-i"
+    
     #Take care with the following regex, @ has a special meaning in double quoted strings, but not in single quoted strings
     search "Email addresses" \
     'example@example.com' \
@@ -2172,10 +2193,10 @@ if [ "$DO_GENERAL" = "true" ]; then
     "-i"
      
     search "TODOs, unfinished and insecure things?" \
-    'TODO:' \
+    'Todo:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'Todo' \
-    "5_general_todo_capital.txt"
+    '[Tt]odo' \
+    "5_general_todo_capital_and_lower.txt"
     
     search "TODOs, unfinished and insecure things?" \
     'TODO:' \
@@ -2239,7 +2260,23 @@ if [ "$DO_GENERAL" = "true" ]; then
     "4_general_fake.txt" \
     "-i"
     
-    search "All URIs" \
+    #Take care with the following regex, @ has a special meaning in double quoted strings, but not in single quoted strings
+    search "URIs with authentication information specified as ://username:password@example.org" \
+    'http://username:password@example.com' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "://.{1,$WILDCARD_SHORT}:.{1,$WILDCARD_SHORT}\@" \
+    "1_general_uris_auth_info_narrow.txt" \
+    "-i"
+    
+    #Take care with the following regex, @ has a special meaning in double quoted strings, but not in single quoted strings
+    search "URIs with authentication information specified as username:password@example.org" \
+    'username:password@example.com' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    ".{1,$WILDCARD_SHORT}:.{1,$WILDCARD_SHORT}\@" \
+    "2_general_uris_auth_info_wide.txt" \
+    "-i"
+    
+    search "All HTTP(S) URIs" \
     'https://example.com' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'https?://' \
@@ -2258,6 +2295,13 @@ if [ "$DO_GENERAL" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'ftp://' \
     "3_general_non_ssl_uris_ftp.txt" \
+    "-i"
+    
+    search "Non-SSL URIs socket" \
+    'socket://192.168.0.1:3000' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'socket://' \
+    "3_general_non_ssl_uris_socket.txt" \
     "-i"
     
     search "Non-SSL URIs" \

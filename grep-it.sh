@@ -593,18 +593,18 @@ if [ "$DO_JAVA" = "true" ]; then
     search 'Java serialized data? Usually Java serialized data in base64 format starts with rO0 or non-base64 with hex ACED0005. Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ for example' \
     'rO0ABXNyABpodWRzb24ucmVtb3RpbmcuQ2FwYWJpbGl0eQAAAAAAAAABAgABSgAEbWFza3hwAAAAAAAAAJP4=' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'rO0' \
+    '[^A-Za-z0-9]rO0' \
     "2_java_serialization-base64serialized-data.txt"
     
     search 'Java serialized data? Usually Java serialized data in base64 format starts with rO0 or non-base64 with hex ACED0005. Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ for example' \
-    'rO0ABXNyABpodWRzb24ucmVtb3RpbmcuQ2FwYWJpbGl0eQAAAAAAAAABAgABSgAEbWFza3hwAAAAAAAAAJP4=' \
+    'ACED0005' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'AC ?ED ?00 ?05' \
     "2_java_serialization-hexserialized-data.txt" \
     "-i"
     
     search 'Java serialized data? Usually Java serialized data in base64 format starts with rO0 or non-base64 with hex ACED0005. Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ for example' \
-    'rO0ABXNyABpodWRzb24ucmVtb3RpbmcuQ2FwYWJpbGl0eQAAAAAAAAABAgABSgAEbWFza3hwAAAAAAAAAJP4=' \
+    '\xAC\xED\x00\x05' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\xAC\xED\x00\x05" \
     "2_java_serialization-serialized-data.txt"

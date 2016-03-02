@@ -51,8 +51,6 @@ WILDCARD_LONG=200
 WILDCARD_EXTRA_LONG=500
 #Do all greps in background with &
 #ATTENTION: THIS WOULD SPAWN A SHIT LOAD OF PROCESSES ON YOUR SYSTEM (LET'S SAY 500)
-#           ADDITIONALLY WE ARE NOT ABLE TO CLEAN UP AFTER WE FINISH (REMOVE EMPTY FILES)
-#           USE WITH CAUTION
 BACKGROUND="false"
 
 #In my opinion I would always leave all the options below here on true,
@@ -109,7 +107,7 @@ DO_GENERAL="true"
 #
 # TODO: 
 #
-# TODO longterm (aka "probably never but I know I should")
+# TODO longterm (aka "probably never but I know I should"):
 # - Write a test that will check if the examples really match the regex
 # - Add/improve comments everywhere
 # - Add comments about case-sensitivity and whitespace behavior of languages and other syntax rules that might influence our regexes
@@ -148,6 +146,17 @@ sleep 2
 
 function search()
 {
+    #Only decides if doing in background or not
+    if [ "$BACKGROUND" = "true" ]; then
+        actual_search "$@" &
+    else
+        actual_search "$@"
+    fi
+    
+
+}
+function actual_search()
+{
     COMMENT="$1"
     EXAMPLE="$2"
     FALSE_POSITIVES_EXAMPLE="$3"
@@ -164,14 +173,10 @@ function search()
         echo "# Grep additional args: $ARGS_FOR_GREP" >> "$TARGET/$OUTFILE"
         echo "# Search regex: $SEARCH_REGEX" >> "$TARGET/$OUTFILE"
     fi
-    if [ "$BACKGROUND" = "true" ]; then
-        $GREP_COMMAND $ARGS_FOR_GREP $STANDARD_GREP_ARGUMENTS "$SEARCH_REGEX" "$SEARCH_FOLDER" >> "$TARGET/$OUTFILE" &
-    else
-        $GREP_COMMAND $ARGS_FOR_GREP $STANDARD_GREP_ARGUMENTS "$SEARCH_REGEX" "$SEARCH_FOLDER" >> "$TARGET/$OUTFILE"
-        if [ $? -ne 0 ]; then
-           #echo "Last grep didn't have a result, removing $OUTFILE"
-           $RM_COMMAND "$TARGET/$OUTFILE"
-        fi
+    $GREP_COMMAND $ARGS_FOR_GREP $STANDARD_GREP_ARGUMENTS "$SEARCH_REGEX" "$SEARCH_FOLDER" >> "$TARGET/$OUTFILE"
+    if [ $? -ne 0 ]; then
+       #echo "Last grep didn't have a result, removing $OUTFILE"
+       $RM_COMMAND "$TARGET/$OUTFILE"
     fi
 }
 
@@ -2552,15 +2557,6 @@ if [ "$DO_GENERAL" = "true" ]; then
     #  (25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.
     #  (25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b
 
-fi
-
-if [ "$BACKGROUND" = "true" ]; then
-    echo ""
-    echo "We cannot remove empty files because we don't know yet which grep processes already finished (background with & is enabled)."
-    echo "Use the following command to see when all greps are done:"
-    echo "ps waux|$GREP_COMMAND $GREP_COMMAND"
-    echo "Use the following command to delete empty files (if you specified not to write comments...):"
-    echo "find $TARGET -type f -size 0 -maxdepth 1 -delete"
 fi
 
 echo ""

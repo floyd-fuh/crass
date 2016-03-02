@@ -780,7 +780,7 @@ if [ "$DO_DOTNET" = "true" ]; then
     search "If you declare a variable 'unsafe' in .NET you can do pointer arythmetic and therefore introduce buffer overflows etc. again" \
     'int unsafe bla' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "\sunsafe\s" \
+    "unsafe\s" \
     "2_dotnet_unsafe_declaration.txt"
     
     search "If you use Marshal in .NET you use an unsafe API and therefore you could introduce buffer overflows etc. again." \
@@ -788,6 +788,13 @@ if [ "$DO_DOTNET" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "Marshal" \
     "2_dotnet_marshal.txt"
+    
+    search "If you use 'LayoutKind.Explicit' in .NET you can get memory corruption again, see http://weblog.ikvm.net/2008/09/13/WritingANETSecurityExploitPoC.aspx for an example" \
+    '[StructLayout(LayoutKind.Explicit)]' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "LayoutKind.Explicit" \
+    "2_dotnet_LayoutKind_explicit.txt"
+    
     
 fi
 
@@ -1942,14 +1949,14 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     search "SHA256. Security depends heavily on usage and what is secured." \
     'SHA256' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'SHA256' \
+    'SHA-?256' \
     "3_cryptocred_ciphers_sha256.txt" \
     "-i"
     
     search "SHA256. Security depends heavily on usage and what is secured." \
     'SHA512' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'SHA512' \
+    'SHA-?512' \
     "3_cryptocred_ciphers_sha512.txt" \
     "-i"
     
@@ -2052,6 +2059,24 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     'pass.?wo?r?d' \
     "2_cryptocred_password.txt" \
     "-i"
+    
+    search "PWD abbrevation for password" \
+    'PWD' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'PWD' \
+    "4_cryptocred_pwd_uppercase.txt"
+    
+    search "pwd abbrevation for password" \
+    'pwd' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'pwd' \
+    "4_cryptocred_pwd_lowercase.txt"
+    
+    search "Pwd abbrevation for password" \
+    'Pwd' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'Pwd' \
+    "4_cryptocred_pwd_capitalcase.txt"
     
     search "Credentials. Included everything 'creden' because some programers write credencials instead of credentials and such things." \
     'credentials' \
@@ -2184,6 +2209,20 @@ if [ "$DO_GENERAL" = "true" ]; then
     "3_general_creditcard.txt" \
     "-i"
     
+    search "Update code and general update strategy weaknesses" \
+    'Update' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'update' \
+    "5_general_update.txt" \
+    "-i"
+    
+    search "Backup code and general backup strategy weaknesses" \
+    'Backup' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'backup' \
+    "5_general_backup.txt" \
+    "-i"
+    
     #Take care with the following regex, @ has a special meaning in double quoted strings, but not in single quoted strings
     search "Email addresses" \
     'example@example.com' \
@@ -2211,7 +2250,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     "5_general_workaround.txt" \
     "-i"
     
-    search "Hack. Developers sometimes hack a workaround around security." \
+    search "Hack. Developers sometimes hack something around security." \
     'hack' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'hack' \
@@ -2393,7 +2432,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     '`basename file-var`' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\`.{2,$WILDCARD_LONG}\`" \
-    "2_general_backticks.txt"\
+    "3_general_backticks.txt"\
     "-i"
     
     search "SQL SELECT statement" \
@@ -2505,7 +2544,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     '192.168.0.1 10.0.0.1' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)' \
-    "2_general_ip-addresses.txt" \
+    "3_general_ip-addresses.txt" \
     "-i"
     #IP-Adresses
     #\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.

@@ -51,6 +51,7 @@ WILDCARD_LONG=200
 WILDCARD_EXTRA_LONG=500
 #Do all greps in background with &
 #ATTENTION: THIS WOULD SPAWN A SHIT LOAD OF PROCESSES ON YOUR SYSTEM (LET'S SAY 500)
+#IN A LOT OF CASES THIS WILL BEHAVE LIKE A FORK BOMB
 BACKGROUND="false"
 
 #In my opinion I would always leave all the options below here on true,
@@ -544,6 +545,30 @@ if [ "$DO_JAVA" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.checkValidity\(" \
     "2_java_ssl_checkValidity.txt"
+    
+    search "CheckServerTrusted, often used for certificate pinning on Java and Android, however, this is very very often insecure and not effective, see https://www.cigital.com/blog/ineffective-certificate-pinning-implementations/ . The correct method is to replace the system's TrustStore." \
+    'checkServerTrusted(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "checkServerTrusted\(" \
+    "2_java_checkServerTrusted.txt"
+    
+    search "getPeerCertificates, often used for certificate pinning on Java and Android, however, this is very very often insecure and not effective, see https://www.cigital.com/blog/ineffective-certificate-pinning-implementations/ . The correct method is to replace the system's TrustStore." \
+    'getPeerCertificates(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "getPeerCertificates\(" \
+    "2_java_getPeerCertificates.txt"
+    
+    search "getPeerCertificateChain, often used for certificate pinning on Java and Android, however, this is very very often insecure and not effective, see https://www.cigital.com/blog/ineffective-certificate-pinning-implementations/ . The correct method is to replace the system's TrustStore." \
+    'getPeerCertificates(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "getPeerCertificateChain\(" \
+    "2_java_getPeerCertificateChain.txt"
+    
+    search "A simple search for getRuntime(), which is often used later on for .exec()" \
+    'getRuntime()' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'getRuntime\(' \
+    "3_java_getruntime.txt"
     
     search "A simple search for getRuntime().exec()" \
     'getRuntime().exec()' \
@@ -1607,12 +1632,6 @@ if [ "$DO_ANDROID" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.setWebContentsDebuggingEnabled\(' \
     "1_android_setWebContentsDebuggingEnabled.txt"
-    
-    search "CheckServerTrusted, often used for certificate pinning on Android" \
-    'checkServerTrusted(' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "checkServerTrusted\(" \
-    "3_android_checkServerTrusted.txt"
     
     search "If an Android app wants to specify how the app is backuped, you use BackupAgent to interfere... Often shows which sensitive data is not written to the backup. See https://developer.android.com/reference/android/app/backup/BackupAgent.html" \
     'new BackupAgent()' \

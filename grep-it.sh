@@ -582,6 +582,12 @@ if [ "$DO_JAVA" = "true" ]; then
     "Process.{0,$WILDCARD_SHORT}\.exec\(" \
     "2_java_runtime_exec_2.txt"
     
+    search "The function openProcess is included in apache commons and does a getRuntime().exec" \
+    'p = openProcess(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\.openProcess\(" \
+    "2_java_apache_common_openProcess.txt"
+    
     search "Validation in Java can be done via javax.validation. " \
     'import javax.validation.bla;' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -2386,6 +2392,13 @@ if [ "$DO_GENERAL" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'hidden' \
     "4_general_hidden.txt" \
+    "-i"
+    
+    search "WSDL defines web services" \
+    'example.wsdl' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'wsdl' \
+    "3_general_wsdl.txt" \
     "-i"
     
     search "Directory listing, usually a bad idea in web servers." \

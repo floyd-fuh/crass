@@ -28,6 +28,7 @@ JAR_CMD="jar"
 TAR_CMD="tar"
 GZIP_CMD="gzip"
 JAR_DECOMPILE="./java-decompile.sh"
+D2J_CMD="d2j-dex2jar"
 
 if [ -e $JAR_DECOMPILE ]
 then
@@ -47,25 +48,25 @@ do
     echo "#Round $loops"
     echo "#unzip all files and delete the zip file afterwards"
     find "$DIR" -depth -iname '*.zip' -exec echo '#Unpacking {}' \; -execdir $UNZIP_CMD -n '{}' \; -delete
-    
+
     echo "#untar all tar files and delete afterwards"
     find "$DIR" -depth -iname '*.tar' -exec echo '#Unpacking {}' \; -execdir $TAR_CMD -xf '{}' \; -delete
-    
+
     echo "#ungzip all gz files and delete afterwards"
     find "$DIR" -depth -iname '*.gz' -exec echo '#Unpacking {}' \; -execdir $GZIP_CMD -d '{}' \; -delete
-    
+
     if [ "$DECOMPILE_POSSIBLE" = true ] ; then
         #TODO: At the moment jd-core does not support war files, although it's exactly the same as a jar file, see bug report at https://github.com/nviennot/jd-core-java/issues/24
         #echo "#decompiling all war files"
         ##We need to find ./java-decompile.sh, so no execdir here
         ##We don't delete them, as we also need the rest of the (meta) data (not only class files in decompiled form)
         #find "$DIR" -depth -iname '*.war' -exec echo '#Decompiling {}' \; -exec $JAR_DECOMPILE '{}' \;
-        
+
         echo "#decompiling all jar files"
         #We need to find ./java-decompile.sh, so no execdir here
         #We don't delete them, as we also need the rest of the (meta) data (not only class files in decompiled form)
         find "$DIR" -depth -iname '*.jar' -exec echo '#Decompiling {}' \; -exec $JAR_DECOMPILE '{}' \;
-        
+
         #jd-core does not support decompilation of a single class file directly, it must be in a jar *sigh*
         #What this means at the moment is that you have to pack them into a jar file :(
         #Side note: You can just pack an *entire* directory into one jar file and jd-core will happily decompile all contained class files
@@ -73,13 +74,16 @@ do
         ##We need to find ./java-decompile.sh, so no execdir here
         #find "$DIR" -depth -iname '*.class' -exec echo '#Unpacking/Decompiling {}' \; -exec $JAR_DECOMPILE '{}' \; -delete
     fi
-    
+
     echo "#unpacking all war files and delete afterwards"
     find "$DIR" -depth -iname '*.war' -exec echo '#Unpacking {}' \; -execdir $JAR_CMD xf '{}' \; -delete
 
     echo "#unpacking all jar files and delete afterwards"
     find "$DIR" -depth -iname '*.jar' -exec echo '#Unpacking {}' \; -execdir $JAR_CMD xf '{}' \; -delete
-    
+
+    echo "#converting all apk files to jar and delete afterwards"
+    find "$DIR" -depth -iname '*.apk' -exec echo '#Converting {}' \; -execdir $D2J_CMD '{}' \; -delete
+
 done
 
 

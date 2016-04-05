@@ -25,7 +25,7 @@ echo "#Bloating $DIR"
 
 UNZIP_CMD="unzip"
 JAR_CMD="jar"
-JAR_CMD="tar"
+TAR_CMD="tar"
 GZIP_CMD="gzip"
 JAR_DECOMPILE="./java-decompile.sh"
 

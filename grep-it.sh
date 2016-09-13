@@ -75,6 +75,8 @@ DO_MOBILE="true"
 DO_ANDROID="true"
 DO_IOS="true"
 
+DO_PYTHON="true"
+
 #C and derived languages
 DO_C="true"
 
@@ -2198,6 +2200,142 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     "3_cryptocred_tls_usage_use-tls.txt" \
     "-i"
     
+fi
+
+#Python language specific stuff
+#- whitespaces are allowed between function names and brackets: abs (-1.3) 
+#- Function names are case sensitive
+#- Due to the many flexible way of calling a function, the regexes will only catch "the most natural" case
+if [ "$DO_PYTHON" = "true" ]; then
+	
+	echo "#Doing python"
+    
+	search "Input function in Python 2.X is dangerous (but not in python 3.X), as it read from stdin and then evals the input, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    'input()' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "input\s{0,$WILDCARD_SHORT}\(" \
+    "3_python_input_function.txt"
+	
+	search "Assert statements are not compiled into the optimized byte code, therefore can not be used for security purposes, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    'assert variable and other' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "assert\s{1,$WILDCARD_SHORT}" \
+    "3_python_assert_statement.txt"
+	
+	search "The 'is' object identity operator should not be used for numbers, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    '1+1 is 2' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\d\s{1,$WILDCARD_SHORT}is\s{1,$WILDCARD_SHORT}" \
+    "2_python_is_object_identity_operator_left.txt"
+	
+	search "The 'is' object identity operator should not be used for numbers, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    '1+1 is 2' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\s{1,$WILDCARD_SHORT}is\s{1,$WILDCARD_SHORT}\d" \
+    "2_python_is_object_identity_operator_right.txt"
+	
+	search "The 'is' object identity operator should not be used for numbers, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    '1+1 is 2' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\s{1,$WILDCARD_SHORT}is\s{1,$WILDCARD_SHORT}[A-Za-z]" \
+    "3_python_is_object_identity_operator_general.txt"
+	
+	search "The float type can not be reliably compared for equality, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    '2.2 * 3.0 == 3.3 * 2.2' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\d\.\d{1,$WILDCARD_SHORT}\s{1,$WILDCARD_SHORT}==\s{1,$WILDCARD_SHORT}" \
+    "2_python_float_equality_left.txt"
+	
+	search "The float type can not be reliably compared for equality, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    '2.2 * 3.0 == 3.3 * 2.2' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\s{1,$WILDCARD_SHORT}==\s{1,$WILDCARD_SHORT}\d\.\d{1,$WILDCARD_SHORT}" \
+    "2_python_float_equality_right.txt"
+	
+	search "The float type can not be reliably compared for equality. Make sure none of these comparisons uses floats, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    '2.2 * 3.0 == 3.3 * 2.2' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\s{1,$WILDCARD_SHORT}==\s{1,$WILDCARD_SHORT}" \
+    "2_python_float_equality_general.txt"
+	
+	search "Double underscore variable visibility can be tricky, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    'self.__private' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "self\.__" \
+    "4_python_double_underscore_general.txt"
+	
+	search "Doing things with __code__ is very low level" \
+    'object.__code__' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "__code__" \
+    "3_python_double_underscore_code.txt"
+	
+	search "The shell=True named argument of the subprocess module makes command injection possible, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    'subprocess.call(unvalidated_input, shell=True)' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "shell=True" \
+    "3_python_subprocess_shell_true.txt"
+	
+	search "mktemp of the tempfile module is flawed, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    'tempfile.mktemp()' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "mktemp\s{0,$WILDCARD_SHORT}\(" \
+    "3_python_tempfile_mktemp.txt"
+	
+	search "shutil.copyfile is flawed as it creates the destination in the most insecure manner possible, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    'shutil.copyfile(src, dst)' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "copyfile\s{0,$WILDCARD_SHORT}\(" \
+    "3_python_shutil_copyfile.txt"
+	
+	search "shutil.move is flawed and silently leaves the old file behind if the source and destination are on different file systems, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    'shutil.move(src, dst)' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "move\s{0,$WILDCARD_SHORT}\(" \
+    "3_python_shutil_move.txt"
+	
+	search "yaml.load is flawed and uses pickle to deserialize its data, which leads to code execution, see https://access.redhat.com/blogs/766093/posts/2592591 . The proper way is to use safe_load." \
+    'import yaml' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "import\s{0,$WILDCARD_SHORT}yaml" \
+    "3_python_yaml_import.txt"
+	
+	search "pickle leads to code execution if untrusted input is deserialized, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    'import pickle' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "import\s{0,$WILDCARD_SHORT}pickle" \
+    "3_python_pickle_import.txt"
+	
+	search "pickle leads to code execution if untrusted input is deserialized, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    'from pickle' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "from\s{0,$WILDCARD_SHORT}pickle" \
+    "3_python_pickle_from.txt"
+	
+	search "shelve leads to code execution if untrusted input is deserialized, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    'import shelve' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "import\s{0,$WILDCARD_SHORT}shelve" \
+    "3_python_shelve_import.txt"
+	
+	search "shelve leads to code execution if untrusted input is deserialized, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    'from shelve' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "from\s{0,$WILDCARD_SHORT}shelve" \
+    "3_python_shelve_from.txt"
+	
+	search "jinja2 in its default configuration leads to XSS if untrusted input is used for rendering, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    'from jinja2' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "from\s{0,$WILDCARD_SHORT}jinja2" \
+    "3_python_jinja2_from.txt"
+	
+	search "jinja2 in its default configuration leads to XSS if untrusted input is used for rendering, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    'import jinja2' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "import\s{0,$WILDCARD_SHORT}jinja2" \
+    "3_python_jinja2_import.txt"
+	
 fi
 
 #Very general stuff (language agnostic)

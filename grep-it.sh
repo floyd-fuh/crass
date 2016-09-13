@@ -1803,6 +1803,12 @@ if [ "$DO_IOS" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'openURL:' \
     "3_ios_string_format_url_handler_openURL.txt"
+	
+    search "NSAllowsArbitraryLoads set to 1 allows iOS applications to load resources over insecure non-TLS protocols." \
+    'NSAllowsArbitraryLoads' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'NSAllowsArbitraryLoads' \
+    "2_ios_NSAllowsArbitraryLoads.txt"
 
 fi
 
@@ -2014,7 +2020,7 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     search 'Find *nix passwd or shadow files.' \
     '_xcsbuildagent:*:239:239:Xcode Server Build Agent:/var/empty:/usr/bin/false' \
     '/Users/eh2pasz/workspace/ios/CCB/CCB/Classes/CBSaver.h:23:46: note: passing argument to parameter "name" here^M+ (NSString *)loadStringWithName:(NSString *)name; 1b:ee:24:46:0c:17:' \
-    "[^:]{3,$WILDCARD_SHORT}:[^:]{1,$WILDCARD_LONG}:\d{0,$WILDCARD_SHORT}:\d{0,$WILDCARD_SHORT}:[^:]{0,$WILDCARD_LONG}:[^:]{0,$WILDCARD_LONG}:" \
+    "[^:]{3,$WILDCARD_SHORT}:[^:]{1,$WILDCARD_LONG}:\d{0,$WILDCARD_SHORT}:\d{0,$WILDCARD_SHORT}:[^:]{0,$WILDCARD_LONG}:[^:]{0,$WILDCARD_LONG}:[^:]*$" \
     "1_cryptocred_passwd_or_shadow_files.txt" \
     "-i"
     
@@ -2029,7 +2035,7 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     'BEGIN CERTIFICATE' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'BEGIN CERTIFICATE' \
-    "1_cryptocred_certificates_and_keys_narrow_begin-certificate.txt"
+    "2_cryptocred_certificates_and_keys_narrow_begin-certificate.txt"
     
     search "Narrow search for certificate and keys specifics of base64 encoded format" \
     'PRIVATE KEY' \
@@ -2041,7 +2047,7 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     'PUBLIC KEY' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'PUBLIC KEY' \
-    "1_cryptocred_certificates_and_keys_narrow_public-key.txt"
+    "2_cryptocred_certificates_and_keys_narrow_public-key.txt"
     
     search "Wide search for certificate and keys specifics of base64 encoded format" \
     'begin certificate' \
@@ -2345,11 +2351,11 @@ if [ "$DO_GENERAL" = "true" ]; then
     "2_general_uris_auth_info_wide.txt" \
     "-i"
     
-    search "All HTTP(S) URIs" \
+    search "All HTTPS URIs" \
     'https://example.com' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'https?://' \
-    "4_general_https_and_http_urls.txt" \
+    'https://' \
+    "4_general_https_urls.txt" \
     "-i"
     
     search "All HTTP URIs" \
@@ -2359,7 +2365,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     "4_general_http_urls.txt" \
     "-i"
     
-    search "Non-SSL URIs" \
+    search "Non-SSL URIs ftp" \
     'ftp://example.com' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'ftp://' \
@@ -2373,14 +2379,14 @@ if [ "$DO_GENERAL" = "true" ]; then
     "3_general_non_ssl_uris_socket.txt" \
     "-i"
     
-    search "Non-SSL URIs" \
+    search "Non-SSL URIs imap" \
     'imap://example.com' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'imap://' \
     "3_general_non_ssl_uris_imap.txt" \
     "-i"
     
-    search "Non-SSL URIs" \
+    search "file URIs" \
     'file://c/example.txt' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'file://' \
@@ -2408,7 +2414,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     "3_general_directory_listing.txt" \
     "-i"
     
-    search "SQL injection and variants of it. Sometimes refered in comments or variable names for code that should prevent it.  If you find something interesting that is used for prevention in a framework, you might want to add another grep for that in this script." \
+    search "SQL injection and variants of it. Sometimes refered in comments or variable names for code that should prevent it. If you find something interesting that is used for prevention in a framework, you might want to add another grep for that in this script." \
     'sql-injection' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "sql.{0,$WILDCARD_SHORT}injection" \

@@ -31,6 +31,8 @@
 # - section: eg. java or php
 # - name of what we looked for
 #
+# Related work:
+# - Especially check out the tools linked on https://www.owasp.org/index.php/Static_Code_Analysis
 
 ###
 #OPTIONS - please customize
@@ -51,7 +53,7 @@ WILDCARD_LONG=200
 WILDCARD_EXTRA_LONG=500
 #Do all greps in background with &
 #ATTENTION: THIS WOULD SPAWN A SHIT LOAD OF PROCESSES ON YOUR SYSTEM (LET'S SAY 500)
-#IN A LOT OF CASES THIS WILL BEHAVE LIKE A FORK BOMB
+#IN A LOT OF CASES THIS WILL BEHAVE LIKE A FORK BOMB.
 BACKGROUND="false"
 
 #In my opinion I would always leave all the options below here on true,
@@ -59,6 +61,7 @@ BACKGROUND="false"
 #change it if grep needs very long, you are greping a lot of stuff
 #or if you have any other performance issues with this script.
 DO_JAVA="true"
+DO_FLEX="true"
 DO_JSP="true"
 DO_SPRING="true"
 DO_STRUTS="true"
@@ -98,8 +101,8 @@ DO_GENERAL="true"
 
 # Conventions if you add new regexes:
 # - First think about which sections you want to put a new rule
-# - Don't use * in regex but use {0,X} instead. See WILDCARD_ variables below for configurable values of X.
-# - make sure functions calls with space before bracket will be found, e.g. "extract (bla)" is allowed in PHP
+# - Don't use * in regex but use {0,X} instead. See WILDCARD_ variables for configurable values of X.
+# - make sure functions calls with space before bracket will be found if the language supports it, e.g. "extract (bla)" is allowed in PHP
 # - If in doubt, prefer to make two regex and output files rather then joining regexes with |. If one produces false positives it is really annoying to search for the true positives of the other regex.
 # - If your regex matches less than 6 characters (eg. "salt"), do not make it case insensitive as this usually produces more fals positives. Rather split into several regexes (eg. one file with case-sensitive matches for "[Ss]alt", one file with case-sensitive matches for "SALT". This way we remove false positives for removesAlternativeName and such). 
 # - Take care with single/double quoted strings. From the bash manual:
@@ -108,12 +111,17 @@ DO_GENERAL="true"
 # 3.1.2.3 Double Quotes
 # Enclosing characters in double quotes (‘"’) preserves the literal value of all characters within the quotes, with the exception of ‘$’, ‘`’, ‘\’, and, when history expansion is enabled, ‘!’. The characters ‘$’ and ‘`’ retain their special meaning within double quotes (see Shell Expansions). The backslash retains its special meaning only when followed by one of the following characters: ‘$’, ‘`’, ‘"’, ‘\’, or newline. Within double quotes, backslashes that are followed by one of these characters are removed. Backslashes preceding characters without a special meaning are left unmodified. A double quote may be quoted within double quotes by preceding it with a backslash. If enabled, history expansion will be performed unless an ‘!’ appearing in double quotes is escaped using a backslash. The backslash preceding the ‘!’ is not removed. The special parameters ‘*’ and ‘@’ have special meaning when in double quotes (see Shell Parameter Expansion).
 #
-# TODO: 
+# TODO short term:
+# - Nothing :)
 #
 # TODO longterm (aka "probably never but I know I should"):
-# - Write a test that will check if the examples really match the regex
 # - Add/improve comments everywhere
 # - Add comments about case-sensitivity and whitespace behavior of languages and other syntax rules that might influence our regexes
+# - Duplicate a couple of regexes to ones that *only* have true positives usually (or at least a lot less false positives)
+# - Have a look at rules in files starting with mod* at https://github.com/nccgroup/VCG/tree/master/VisualCodeGrepper and other projects such as https://sonarqube.com/coding_rules#types=VULNERABILITY and the list at https://www.owasp.org/index.php/Static_Code_Analysis
+
+#When the following flag is enable the tool switches to testing mode and won't do the actual work
+DEBUG_TEST_FLAG="false"
 
 if [ $# -lt 1 ]
 then
@@ -142,22 +150,28 @@ SEARCH_FOLDER=${1%/}
 
 mkdir "$TARGET"
 
-echo "Your standard grep arguments (customize in OPTIONS setting): $STANDARD_GREP_ARGUMENTS"
+echo "Your standard grep arguments (customize in OPTIONS section of this script): $STANDARD_GREP_ARGUMENTS"
 echo "Output will be put into this folder: $TARGET"
 echo "You are currently greping through folder: $SEARCH_FOLDER"
 sleep 2
 
 function search()
 {
-    #Only decides if doing in background or not
-    if [ "$BACKGROUND" = "true" ]; then
-        actual_search "$@" &
-    else
-        actual_search "$@"
-    fi
-    
+	
+	if [ "$DEBUG_TEST_FLAG" = "true" ]; then
+		test_run "$@"
+	else
+		#Decide if doing in background or not
+	    if [ "$BACKGROUND" = "true" ]; then
+	        actual_search "$@" &
+			sleep 1
+	    else
+	        actual_search "$@"
+	    fi
+	fi
 
 }
+
 function actual_search()
 {
     COMMENT="$1"
@@ -165,7 +179,7 @@ function actual_search()
     FALSE_POSITIVES_EXAMPLE="$3"
     SEARCH_REGEX="$4"
     OUTFILE="$5"
-    ARGS_FOR_GREP="$6" #usually just -i for case insensitive or empty
+    ARGS_FOR_GREP="$6" #usually just -i for case insensitive or empty, very rare we use -o for match-only part with no context info
     #echo "$COMMENT, $SEARCH_REGEX, $OUTFILE, $ARGS_FOR_GREP, $WRITE_COMMENT, $BACKGROUND, $GREP_COMMAND, $STANDARD_GREP_ARGUMENTS, $TARGET"
     echo "Searching (background:$BACKGROUND args for grep:$ARGS_FOR_GREP) for $SEARCH_REGEX --> writing to $OUTFILE"
     if [ "$WRITE_COMMENT" = "true" ]; then
@@ -178,12 +192,12 @@ function actual_search()
     fi
     $GREP_COMMAND $ARGS_FOR_GREP $STANDARD_GREP_ARGUMENTS "$SEARCH_REGEX" "$SEARCH_FOLDER" >> "$TARGET/$OUTFILE"
     if [ $? -ne 0 ]; then
-       #echo "Last grep didn't have a result, removing $OUTFILE"
-       $RM_COMMAND "$TARGET/$OUTFILE"
+        #echo "Last grep didn't have a result, removing $OUTFILE"
+        $RM_COMMAND "$TARGET/$OUTFILE"
     fi
 }
 
-function true_and_false_positive_checker()
+function test_run()
 {
     COMMENT="$1"
     EXAMPLE="$2"
@@ -191,11 +205,16 @@ function true_and_false_positive_checker()
     SEARCH_REGEX="$4"
     OUTFILE="$5"
     ARGS_FOR_GREP="$6"
-    #echo "$COMMENT, $SEARCH_REGEX, $OUTFILE, $ARGS_FOR_GREP, $WRITE_COMMENT, $BACKGROUND, $GREP_COMMAND, $STANDARD_GREP_ARGUMENTS, $TARGET"
-    #TODO:
-    echo "$FALSE_POSITIVES_EXAMPLE" >> "tests/false_positives.txt"
-    $GREP_COMMAND $ARGS_FOR_GREP $STANDARD_GREP_ARGUMENTS "$SEARCH_REGEX" "$SEARCH_FOLDER" >> "$TARGET/$OUTFILE"
-    
+    #echo "Testing: $COMMENT, $SEARCH_REGEX, $OUTFILE, $ARGS_FOR_GREP, $WRITE_COMMENT, $BACKGROUND, $GREP_COMMAND, $STANDARD_GREP_ARGUMENTS, $TARGET"
+	#First, test that regexes match the example
+    echo "$EXAMPLE" > "testing/temp_file.txt"
+    $GREP_COMMAND $ARGS_FOR_GREP $STANDARD_GREP_ARGUMENTS "$SEARCH_REGEX" "testing/temp_file.txt" > /dev/null
+    if [ $? -ne 0 ]; then
+        echo "FAIL! $EXAMPLE was not matched for regex $SEARCH_REGEX"
+	#else
+	    #echo "PASS! $SEARCH_REGEX"
+	fi
+	
 }
 
 
@@ -235,28 +254,38 @@ if [ "$DO_JAVA" = "true" ]; then
     'new PBEKeySpec(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'new\sPBEKeySpec\(' \
-    "1_java_crypto_new-PBEKeySpec(.txt" \
+    "1_java_crypto_new-PBEKeySpec.txt" \
     "-i"
     
     search "GenerateKey is another form of making a new instance of SecretKey, depending on the use case randomly generates one on the fly. It's interesting to see where the key goes next, where it's stored or accidentially written to a log file." \
     '.generateKey()' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.generateKey\(' \
-    "2_java_crypto_generateKey.txt" \
-    "-i"
+    "2_java_crypto_generateKey.txt"
     
-    search "Occurences of KeyGenerator.getInstance(ALGORITHM) it's interesting to see where the key goes next, where it's stored or accidentially written to a log file." \
+    search "Occurences of KeyGenerator.getInstance(ALGORITHM) it's interesting to see where the key goes next, where it's stored or accidentially written to a log file. Make sure the cipher is secure." \
     'KeyGenerator.getInstance(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'KeyGenerator\.getInstance\(' \
-    "2_java_crypto_keygenerator-getinstance.txt" \
-    "-i"
+    "2_java_crypto_keygenerator-getinstance.txt"
+	
+    search "Occurences of Cipher.getInstance(ALGORITHM) it's interesting to see where the key goes next, where it's stored or accidentially written to a log file. Make sure the cipher is secure." \
+    'Cipher.getInstance("RSA/NONE/NoPadding");' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'Cipher\.getInstance\(' \
+    "2_java_crypto_cipher_getInstance.txt"
     
     search "The Random class shouldn't be used for crypthography in Java, the SecureRandom should be used instead." \
     'Random random = new Random();' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'new Random\(' \
-    "2_java_crypto_random.txt" \
+    "2_java_crypto_random.txt"
+	
+    search "The Math.random class shouldn't be used for crypthography in Java, the SecureRandom should be used instead." \
+    'Math.random();' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'Math.random\(' \
+    "2_java_math_random.txt"
     
     search "Message digest is used to generate hashes" \
     'messagedigest' \
@@ -298,7 +327,7 @@ if [ "$DO_JAVA" = "true" ]; then
     search "Problem with equals and equalsIgnoreCase for checking user supplied passwords or Hashes or HMACs or XYZ is that it is not a time-consistent method, therefore allowing timing attacks." \
     '.equalsIgnoreCase(hash_from_request' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'equalsIgnoreCase\(.{0,$WILDCARD_SHORT}[Hh][Aa][Ss][Hh]' \
+    "equalsIgnoreCase\(.{0,$WILDCARD_SHORT}[Hh][Aa][Ss][Hh]" \
     "2_java_string_comparison_equalsIgnoreCase_hash.txt"
     
     search "String comparisons: Filters and conditional decisions on user input should better be done with .equalsIgnoreCase() in Java in most cases, so that the clause doesn't miss something (e.g. think about string comparison in filters) or long switch case. Another problem with equals and equalsIgnoreCase for checking user supplied passwords or Hashes or HMACs or XYZ is that it is not a time-consistent method, therefore allowing timing attacks." \
@@ -392,7 +421,7 @@ if [ "$DO_JAVA" = "true" ]; then
     "3_java_http_getParameter.txt"
     
     search "Potential tainted input in string format." \
-    'String.format(\"bla-%s\"+taintedInput, variable);' \
+    'String.format("bla-%s"+taintedInput, variable);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "String\.format\(\s{0,$WILDCARD_SHORT}\"[^\"]{1,$WILDCARD_LONG}\"\s{0,$WILDCARD_SHORT}\+" \
     "3_java_format_string1.txt"
@@ -426,14 +455,14 @@ if [ "$DO_JAVA" = "true" ]; then
     
     #Take care with the following regex, @ has a special meaning in double quoted strings, but not in single quoted strings
     search "The source code shows the database table/column names... e.g. if you find a sql injection later on, this will help for the exploitation" \
-    '@Column' \
+    '@Column(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '@Column\(' \
     "3_java_persistent_columns_in_database.txt"
     
     #Take care with the following regex, @ has a special meaning in double quoted strings, but not in single quoted strings
     search "The source code shows the database table/column names... e.g. if you find a sql injection later on, this will help for the exploitation" \
-    '@Table' \
+    '@Table(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '@Table\(' \
     "3_java_persistent_tables_in_database.txt"
@@ -538,7 +567,7 @@ if [ "$DO_JAVA" = "true" ]; then
     search "It's very easy to construct a backdoor in Java with Unicode \u characters, even within multi line comments, see http://pastebin.com/iGQhuUGd and https://plus.google.com/111673599544007386234/posts/ZeXvRCRZ3LF ." \
     '\u0041\u0042' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    '\u00..\u00..' \
+    '\\u00..\\u00..' \
     "3_java_backdoor_as_unicode.txt" \
     "-i"
     
@@ -561,7 +590,7 @@ if [ "$DO_JAVA" = "true" ]; then
     "2_java_getPeerCertificates.txt"
     
     search "getPeerCertificateChain, often used for certificate pinning on Java and Android, however, this is very very often insecure and not effective, see https://www.cigital.com/blog/ineffective-certificate-pinning-implementations/ . The correct method is to replace the system's TrustStore." \
-    'getPeerCertificates(' \
+    'getPeerCertificateChain(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "getPeerCertificateChain\(" \
     "2_java_getPeerCertificateChain.txt"
@@ -587,7 +616,7 @@ if [ "$DO_JAVA" = "true" ]; then
     search "The function openProcess is included in apache commons and does a getRuntime().exec" \
     'p = openProcess(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "\.openProcess\(" \
+    "openProcess\(" \
     "2_java_apache_common_openProcess.txt"
     
     search "Validation in Java can be done via javax.validation. " \
@@ -631,7 +660,7 @@ if [ "$DO_JAVA" = "true" ]; then
     search 'Java serialized data? Usually Java serialized data in base64 format starts with rO0 or non-base64 with hex ACED0005. Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ for example' \
     'rO0ABXNyABpodWRzb24ucmVtb3RpbmcuQ2FwYWJpbGl0eQAAAAAAAAABAgABSgAEbWFza3hwAAAAAAAAAJP4=' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    '[^A-Za-z0-9]rO0' \
+    'rO0' \
     "2_java_serialization-base64serialized-data.txt"
     
     search 'Java serialized data? Usually Java serialized data in base64 format starts with rO0 or non-base64 with hex ACED0005. Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ for example' \
@@ -644,7 +673,7 @@ if [ "$DO_JAVA" = "true" ]; then
     search 'Java serialized data? Usually Java serialized data in base64 format starts with rO0 or non-base64 with hex ACED0005. Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ for example' \
     '\xAC\xED\x00\x05' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "\xAC\xED\x00\x05" \
+    '\\xAC\\xED\\x00\\x05' \
     "2_java_serialization-serialized-data.txt"
     
     search 'JMXInvokerServlet is a JBoss interface that is usually vulnerable to Java deserialization attacks. There are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ for example' \
@@ -658,9 +687,96 @@ if [ "$DO_JAVA" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'InvokerTransformer' \
     "2_java_serialization-invokertransformer.txt"
-    
+	
+    search 'File.createTempFile is prone to race condition under certain circumstances, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
+    'File.createTempFile();' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.createTempFile\(' \
+    "3_java_createTempFile.txt"
+	
+    search 'HttpServletRequest.getRequestedSessionId returns the session ID requested by the client in the HTTP cookie header, not the one set by the server, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
+    'HttpServletRequest.getRequestedSessionId();' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.getRequestedSessionId\(' \
+    "3_java_getRequestedSessionId.txt"
+	
+    search 'NullCipher is obviously a cipher that is not secure, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
+    'new NullCipher();' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'NullCipher' \
+    "3_java_NullCipher.txt"
+	
+    search 'Dynamic class loading?, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
+    'Class c = Class.forName(cn);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'Class\.forName' \
+    "3_java_class_forName.txt"
+	
+    search 'New cookie should automatically be followed by c.setSecure(true); to make sure the secure flag ist set, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
+    'Cookie c = new Cookie(a, b);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'new\sCookie\(' \
+    "3_java_new_cookie.txt"
+	
+    search 'Servlet methods that throw exceptions might reveal sensitive information, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
+    'public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "void do.{0,$WILDCARD_LONG}throws.{0,$WILDCARD_LONG}ServletException" \
+    "3_java_servlet_exception.txt"
+	
+    search 'Security decisions should not be done based on the HTTP referer header as it is attacker chosen, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
+    'String referer = request.getHeader("referer");' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.getHeader\("referer' \
+    "3_java_getHeader_referer.txt"
+	
+    search 'Usually it is a bad idea to subclass cryptographic implementation, developers might break the implementation, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
+    'MyCryptographicAlgorithm extends MessageDigest {' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "extends\s{0,$WILDCARD_SHORT}MessageDigest" \
+    "3_java_extends_MessageDigest.txt"
+	
+    search 'Usually it is a bad idea to subclass cryptographic implementation, developers might break the implementation, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
+    'MyCryptographicAlgorithm extends WhateverCipher {' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "extends\s{0,$WILDCARD_SHORT}cipher" \
+    "3_java_extends_cipher.txt" \
+	"-i"
+	
+    search "printStackTrace logs and should not be in production (also logs to Android log), information leakage, etc." \
+    '.printStackTrace()' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.printStackTrace\(' \
+    "3_java_printStackTrace.txt"
+	
+    search "setAttribute is usually used to set an attribute of a session object, untrusted data should not be added to a session object" \
+    'session.setAttribute("abc", untrusted_input);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.setAttribute\(' \
+    "3_java_setAttribute.txt"
+	
 fi
 
+#The FLEX Flash specific stuff
+if [ "$DO_FLEX" = "true" ]; then
+	search 'Flex Flash has Security.allowDomain that should be tightly set and for sure not to *, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=flex' \
+	'Security.allowDomain("*");' \
+	'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+	'Security\.allowDomain' \
+	"3_flex_security_allowDomain.txt"
+	
+	search 'Flex Flash has trace to output debug info, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=flex' \
+	'trace("output:" + value);' \
+	'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+	'trace\(' \
+	"3_flex_trace.txt"
+	
+	search 'ExactSettings to false makes cross-domain attacks possible, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=flex' \
+	'Security.exactSettings = false;' \
+	'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+	'Security\.exactSettings' \
+	"3_flex_exactSettings.txt"
+fi
 
 #The JSP specific stuff
 if [ "$DO_JSP" = "true" ]; then
@@ -702,7 +818,7 @@ if [ "$DO_JSP" = "true" ]; then
     search "Can introduce XSS when simply writing a bean property to HTML without escaping. Attention: there are now client-side JavaScript libraries using the same tags for templates!" \
     '<%=bean.getName()%>' \
     'Attention: there are now client-side JavaScript libraries using the same tags for templates!' \
-    "<%=\s{1,$WILDCARD_SHORT}[A-Za-z0-9_]{1,$WILDCARD_LONG}.get[A-Za-z0-9_]{1,$WILDCARD_LONG}\(.{1,$WILDCARD_LONG}%>" \
+    "<%=\s{0,$WILDCARD_SHORT}[A-Za-z0-9_]{1,$WILDCARD_LONG}.get[A-Za-z0-9_]{1,$WILDCARD_LONG}\(" \
     "1_java_jsp_property_to_html_xss.txt" \
     "-i"
     
@@ -711,13 +827,6 @@ if [ "$DO_JSP" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.getParameter\(" \
     "3_java_jsp_property_to_html_xss.txt" \
-    "-i"
-    
-    search "Can introduce XSS when simply writing a bean property to HTML without escaping." \
-    'out.print(bean.getName());' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "out.printl?n?\(\"<[^\"]{1,$WILDCARD_LONG}='\"\);" \
-    "1_java_jsp_out_print_to_html_xss.txt" \
     "-i"
     
     search "Can introduce XSS when simply writing a bean property to HTML without escaping." \
@@ -804,9 +913,9 @@ if [ "$DO_DOTNET" = "true" ]; then
     echo "#Doing .NET"
     
     search ".NET View state enable" \
-    'EnableViewStateMac' \
+    'EnableViewState' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "EnableViewStateMac" \
+    "EnableViewState" \
     "3_dotnet_viewState.txt"
     
     search "Potentially dangerous request filter message is not poping up when disabled, which means XSS in a lot of cases." \
@@ -830,9 +939,34 @@ if [ "$DO_DOTNET" = "true" ]; then
     search "If you use 'LayoutKind.Explicit' in .NET you can get memory corruption again, see http://weblog.ikvm.net/2008/09/13/WritingANETSecurityExploitPoC.aspx for an example" \
     '[StructLayout(LayoutKind.Explicit)]' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "LayoutKind.Explicit" \
+    "LayoutKind\.Explicit" \
     "2_dotnet_LayoutKind_explicit.txt"
     
+    search "Console.WriteLine should not be used as it is only for debugging purposes, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=cs" \
+    'Console.WriteLine("debug with sensitive information")' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "Console\.WriteLine" \
+    "3_dotnet_console_WriteLine.txt"
+	
+    search "TripleDESCryptoServiceProvider, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=cs" \
+    'new TripleDESCryptoServiceProvider();' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "TripleDESCryptoServiceProvider" \
+    "3_dotnet_TripleDESCryptoServiceProvider.txt"
+	
+    search "unchecked allows to disable exceptions for integer overflows, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=cs" \
+    'int d = unchecked(list.Sum()); or also as a block unchecked { int e = list.Sum(); }' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "unchecked" \
+    "3_dotnet_unchecked.txt"
+	
+    search "Code access security permission changing via reflection, see one of the rules of https://www.owasp.org/index.php/Category:OWASP_Code_Crawler" \
+    'ReflectionPermission.MemberAccess' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "ReflectionPermission" \
+    "3_dotnet_ReflectionPermission.txt"
+	
+	
     
 fi
 
@@ -846,25 +980,25 @@ if [ "$DO_PHP" = "true" ]; then
     search "Tainted input, GET URL parameter" \
     '$_GET' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    '$_GET' \
+    '\$_GET' \
     "3_php_get.txt"
     
     search "Tainted input, POST parameter" \
     '$_POST' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    '$_POST' \
+    '\$_POST' \
     "3_php_post.txt"
     
     search "Tainted input, cookie parameter" \
     '$_COOKIE' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    '$_COOKIE' \
+    '\$_COOKIE' \
     "3_php_cookie.txt"
     
     search "Tainted input. Using \$_REQUEST is a bad idea in general, as that means GET/POST exchangeable and transporting sensitive information in the URL is a bad idea (see HTTP RFC -> ends up in logs, browser history, etc.)." \
     '$_REQUEST' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    '$_REQUEST' \
+    '\$_REQUEST' \
     "3_php_request.txt"
     
     search "Dangerous PHP function: popen" \
@@ -1031,28 +1165,28 @@ if [ "$DO_PHP" = "true" ]; then
     search "Methods that often introduce XSS: echo in combination with \$_POST." \
     'echo $_POST["ABC"]' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "echo.{0,$WILDCARD_LONG}\$_POST" \
+    "echo.{0,$WILDCARD_LONG}\\\$_POST" \
     "1_php_echo_low_volume_POST.txt" \
     "-i"
     
     search "Methods that often introduce XSS: echo in combination with \$_GET." \
     'echo $_GET["ABC"]' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "echo.{0,$WILDCARD_LONG}\$_GET" \
+    "echo.{0,$WILDCARD_LONG}\\\$_GET" \
     "1_php_echo_low_volume_GET.txt" \
     "-i"
     
     search "Methods that often introduce XSS: echo in combination with \$_COOKIE. And there is no good explanation usually why a cookie is printed to the HTML anyway (debug interface?)." \
     'echo $_COOKIE["ABC"]' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "echo.{0,$WILDCARD_LONG}\$_COOKIE" \
+    "echo.{0,$WILDCARD_LONG}\\\$_COOKIE" \
     "1_php_echo_low_volume_COOKIE.txt" \
     "-i"
     
     search "Methods that often introduce XSS: echo in combination with \$_REQUEST." \
     'echo $_REQUEST["ABC"]' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "echo.{0,$WILDCARD_LONG}\$_REQUEST" \
+    "echo.{0,$WILDCARD_LONG}\\\$_REQUEST" \
     "1_php_echo_low_volume_REQUEST.txt" \
     "-i"
     
@@ -1066,28 +1200,28 @@ if [ "$DO_PHP" = "true" ]; then
     search "Methods that often introduce XSS: print in combination with \$_POST." \
     'print $_POST["ABC"]' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "print.{0,$WILDCARD_LONG}\$_POST" \
+    "print.{0,$WILDCARD_LONG}\\\$_POST" \
     "1_php_print_low_volume_POST.txt" \
     "-i"
     
     search "Methods that often introduce XSS: print in combination with \$_GET." \
     'print $_GET["ABC"]' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "print.{0,$WILDCARD_LONG}\$_GET" \
+    "print.{0,$WILDCARD_LONG}\\\$_GET" \
     "1_php_print_low_volume_GET.txt" \
     "-i"
     
     search "Methods that often introduce XSS: print in combination with \$_COOKIE. And there is no good explanation usually why a cookie is printed to the HTML anyway (debug interface?)." \
     'print $_COOKIE["ABC"]' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "print.{0,$WILDCARD_LONG}\$_COOKIE" \
+    "print.{0,$WILDCARD_LONG}\\\$_COOKIE" \
     "1_php_print_low_volume_COOKIE.txt" \
     "-i"
     
     search "Methods that often introduce XSS: print in combination with \$_REQUEST. Don't use \$_REQUEST in general." \
     'print $_REQUEST["ABC"]' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "print.{0,$WILDCARD_LONG}\$_REQUEST" \
+    "print.{0,$WILDCARD_LONG}\\\$_REQUEST" \
     "1_php_print_low_volume_REQUEST.txt" \
     "-i"
     
@@ -1288,6 +1422,48 @@ if [ "$DO_JAVASCRIPT" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.outerHTML\s{0,$WILDCARD_SHORT}=" \
     "4_js_dom_xss_outerHTML.txt"
+	
+    search "Console should not be logged to in production" \
+    'console.log(user_password);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "console\." \
+    "4_js_console.txt"
+	
+    search "The postMessage in JavaScript should explicitly not be used with targetOrigin set to * and check how messages are exchanged, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=js" \
+    'aWindow.postMessage(message, "*");' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "myWindow\.postMessage\(" \
+    "4_js_postMessage.txt"
+	
+    search "The debugger statement is basically a breakpoint, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=js" \
+    'debugger;' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "debugger;" \
+    "4_js_debugger.txt"
+	
+    search "The constructor for functions can be used as a replacement for eval, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=js" \
+    'f = new Function("name", "return 123 + name"); ' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "new\sFunction.{0,$WILDCARD_SHORT}+" \
+    "3_js_new_function_eval.txt"
+	
+    search "Sensitive information in localStorage is not encrypted, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=js" \
+    'localStorage.setItem("data", sensitive_data); ' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "localStorage" \
+    "3_js_localStorage.txt"
+	
+    search "Sensitive information in sessionStorage is not encrypted, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=js" \
+    'sessionStorage.setItem("data", sensitive_data); ' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "sessionStorage" \
+    "3_js_sessionStorage.txt"
+
+    search "Dynamic creation of script tag, where is it loading JavaScript from?" \
+    'elem = createElement("script");' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "createElement.{0,$WILDCARD_SHORT}script" \
+    "3_js_createElement_script.txt"
 
 fi
 
@@ -1434,38 +1610,32 @@ if [ "$DO_ANDROID" = "true" ]; then
     
     echo "#Doing Android"
     
-    search "printStackTrace logs to Android log, information leakage, etc." \
-    '.printStackTrace(' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    '\.printStackTrace\(' \
-    "3_android_printStackTrace.txt"
-    
     search "From http://developer.android.com/reference/android/util/Log.html : The order in terms of verbosity, from least to most is ERROR, WARN, INFO, DEBUG, VERBOSE. Verbose should never be compiled into an application except during development. Debug logs are compiled in but stripped at runtime. Error, warning and info logs are always kept." \
-    'Log.e' \
+    'Log.e(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'Log\.e\(' \
     "3_android_logging_error.txt"
     
     search "From http://developer.android.com/reference/android/util/Log.html : The order in terms of verbosity, from least to most is ERROR, WARN, INFO, DEBUG, VERBOSE. Verbose should never be compiled into an application except during development. Debug logs are compiled in but stripped at runtime. Error, warning and info logs are always kept." \
-    'Log.w' \
+    'Log.w(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'Log\.w\(' \
     "3_android_logging_warning.txt"
     
     search "From http://developer.android.com/reference/android/util/Log.html : The order in terms of verbosity, from least to most is ERROR, WARN, INFO, DEBUG, VERBOSE. Verbose should never be compiled into an application except during development. Debug logs are compiled in but stripped at runtime. Error, warning and info logs are always kept." \
-    'Log.i' \
+    'Log.i(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'Log\.i\(' \
     "3_android_logging_information.txt"
     
     search "From http://developer.android.com/reference/android/util/Log.html : The order in terms of verbosity, from least to most is ERROR, WARN, INFO, DEBUG, VERBOSE. Verbose should never be compiled into an application except during development. Debug logs are compiled in but stripped at runtime. Error, warning and info logs are always kept." \
-    'Log.d' \
+    'Log.d(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'Log\.d\(' \
     "3_android_logging_debug.txt"
     
     search "From http://developer.android.com/reference/android/util/Log.html : The order in terms of verbosity, from least to most is ERROR, WARN, INFO, DEBUG, VERBOSE. Verbose should never be compiled into an application except during development. Debug logs are compiled in but stripped at runtime. Error, warning and info logs are always kept." \
-    'Log.v' \
+    'Log.v(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'Log\.v\(' \
     "3_android_logging_verbose.txt"
@@ -1512,8 +1682,8 @@ if [ "$DO_ANDROID" = "true" ]; then
     '\.getDatabase\(' \
     "3_android_access_getDatabase.txt"
     
-    search "Android open database" \
-    '.openDatabase' \
+    search "Android open database (and btw. a deprecated W3C standard that was never really implemented in a lot of browsers for JavaScript for local storage)" \
+    '.openDatabase(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.openDatabase\(' \
     "3_android_access_openDatabase.txt"
@@ -1868,7 +2038,7 @@ if [ "$DO_C" = "true" ]; then
     'fn?printf\(' \
     "2_c_insecure_c_functions_fprintf_fnprintf.txt"
     
-    search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
+    search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets. Additionally the format string should never be simple %s but rather %9s or similar to limit size that is read." \
     'fscanf(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'f?scanf\(' \
@@ -1877,7 +2047,7 @@ if [ "$DO_C" = "true" ]; then
     search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
     'gets(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    '[^a-zA-Z_-]gets\(' \
+    'gets\(' \
     "2_c_insecure_c_functions_gets.txt"
     
 fi
@@ -2061,7 +2231,7 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     search "Wide search for certificate and keys specifics of base64 encoded format" \
     'private key' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "PRIVATE{0,$WILDCARD_SHORT}KEY" \
+    "PRIVATE.{0,$WILDCARD_SHORT}KEY" \
     "4_cryptocred_certificates_and_keys_wide_private-key.txt" \
     "-i"
     
@@ -2095,7 +2265,7 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     'pass-word or passwd' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'pass.?wo?r?d' \
-    "2_cryptocred_password.txt" \
+    "3_cryptocred_password.txt" \
     "-i"
     
     search "PWD abbrevation for password" \
@@ -2235,10 +2405,10 @@ if [ "$DO_PYTHON" = "true" ]; then
     "2_python_is_object_identity_operator_right.txt"
 	
 	search "The 'is' object identity operator should not be used for numbers, see https://access.redhat.com/blogs/766093/posts/2592591" \
-    '1+1 is 2' \
+    'object.an_integer is other_object.other_integer' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "\s{1,$WILDCARD_SHORT}is\s{1,$WILDCARD_SHORT}[A-Za-z]" \
-    "3_python_is_object_identity_operator_general.txt"
+    "\sis\s" \
+    "5_python_is_object_identity_operator_general.txt"
 	
 	search "The float type can not be reliably compared for equality, see https://access.redhat.com/blogs/766093/posts/2592591" \
     '2.2 * 3.0 == 3.3 * 2.2' \
@@ -2325,16 +2495,16 @@ if [ "$DO_PYTHON" = "true" ]; then
     "3_python_shelve_from.txt"
 	
 	search "jinja2 in its default configuration leads to XSS if untrusted input is used for rendering, see https://access.redhat.com/blogs/766093/posts/2592591" \
-    'from jinja2' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "from\s{0,$WILDCARD_SHORT}jinja2" \
-    "3_python_jinja2_from.txt"
-	
-	search "jinja2 in its default configuration leads to XSS if untrusted input is used for rendering, see https://access.redhat.com/blogs/766093/posts/2592591" \
     'import jinja2' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "import\s{0,$WILDCARD_SHORT}jinja2" \
     "3_python_jinja2_import.txt"
+	
+	search "jinja2 in its default configuration leads to XSS if untrusted input is used for rendering, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    'from jinja2' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "from\s{0,$WILDCARD_SHORT}jinja2" \
+    "3_python_jinja2_from.txt"
 	
 fi
 
@@ -2530,6 +2700,13 @@ if [ "$DO_GENERAL" = "true" ]; then
     'file://' \
     "3_general_non_ssl_uris_file.txt" \
     "-i"
+	
+    search "jdbc URIs" \
+    'jdbc:mysql://localhost/test?password=ABC' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'jdbc:' \
+    "3_general_jdbc_uri.txt" \
+    "-i"
     
     search "Hidden things, for example hidden HTML fields" \
     'hidden:' \
@@ -2624,9 +2801,9 @@ if [ "$DO_GENERAL" = "true" ]; then
     "-i"
     
     search "SQL INSERT statement" \
-    'INSER 123 INTO TABLE' \
+    'INSERT INTO TABLE example VALUES(123);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "INSERT.{0,$WILDCARD_LONG}INTO" \
+    "INSERT.{0,$WILDCARD_SHORT}INTO" \
     "3_general_sql_insert.txt" \
     "-i"
     
@@ -2647,14 +2824,14 @@ if [ "$DO_GENERAL" = "true" ]; then
     search "Base64 encoded data (that is more than 6 bytes long). This regex won't detect a base64 encoded value over several lines..." \
     'YWJj YScqKyo6LV/Dpw==' \
     '/target/ //JQLite - the following ones shouldnt be an issue anymore as we require more than 6 bytes: done echo else gen/ ////' \
-    '^(?:[A-Za-z0-9+/]{4})+(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$' \
+    '(?:[A-Za-z0-9+/]{4})+(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})' \
     "2_general_base64.txt"
     #case sensitive, the regex is insensitive anyway
     
     search "Base64 URL-safe encoded data (that is more than 6 bytes long). To get from URL-safe base64 to regular base64 you need .replace('-','+').replace('_','/'). This regex won't detect a base64 encoded value over several lines..." \
     'YScqKyo6LV_Dpw==' \
     '/target/ //JQLite - the following ones shouldnt be an issue anymore as we require more than 6 bytes: done echo else gen/ ////' \
-    '^(?:[A-Za-z0-9\-_]{4})+(?:[A-Za-z0-9\-_]{2}==|[A-Za-z0-9\-_]{3}=|[A-Za-z0-9\-_]{4})$' \
+    '(?:[A-Za-z0-9\-_]{4})+(?:[A-Za-z0-9\-_]{2}==|[A-Za-z0-9\-_]{3}=|[A-Za-z0-9\-_]{4})' \
     "2_general_base64.txt"
     #case sensitive, the regex is insensitive anyway
     
@@ -2733,6 +2910,41 @@ if [ "$DO_GENERAL" = "true" ]; then
     #  (25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.
     #  (25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b
 
+    search "Referer is only used for the HTTP Referer usually, it can be specified by the attacker" \
+    'referer' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'referer' \
+    "3_general_referer.txt" \
+    "-i"
+	
+    search "Generic search for SQL injection, FROM and WHERE being SQL keywords and + meaning string concatenation" \
+    'q = "SELECT * from USERS where NAME=" + user;' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "from\s.{0,$WILDCARD_LONG}\swhere\s.{0,$WILDCARD_LONG}+" \
+    "3_general_sqli_generic.txt" \
+    "-i"
+	
+    search "A form of query often used for LDAP, should be checked if it doesn't lead to LDAP injection and/or DoS" \
+    'String ldap_query = "(&(param=user)(name=" + name_unsanitized + "))";' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\(&\(.{0,$WILDCARD_SHORT}=" \
+    "3_general_ldap_generic.txt" \
+    "-i"
+	
+    search "Generic exec call often used for OS command execution" \
+    'runTime.exec("echo "+unsanitized_input);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "exec\(" \
+    "3_general_exec_generic.txt" \
+    "-i"
+	
+    search "Generic sleep call, if server side this could block thread/process and therefore enable to easily do Denial of Service attacks" \
+    'sleep(2);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "sleep" \
+    "3_general_sleep_generic.txt" \
+    "-i"
+	
 fi
 
 echo ""

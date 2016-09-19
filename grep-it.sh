@@ -51,10 +51,9 @@ WRITE_COMMENT="true"
 WILDCARD_SHORT=20
 WILDCARD_LONG=200
 WILDCARD_EXTRA_LONG=500
-#Do all greps in background with &
-#ATTENTION: THIS WOULD SPAWN A SHIT LOAD OF PROCESSES ON YOUR SYSTEM (LET'S SAY 500)
-#IN A LOT OF CASES THIS WILL BEHAVE LIKE A FORK BOMB.
-BACKGROUND="false"
+#Do all greps in background with & while only using MAX_PROCESSES subprocesses
+BACKGROUND="true"
+MAX_PROCESSES=8
 
 #In my opinion I would always leave all the options below here on true,
 #because I did find strange android code in iphone apps and vice versa. I would only
@@ -157,18 +156,26 @@ sleep 2
 
 function search()
 {
-	
-	if [ "$DEBUG_TEST_FLAG" = "true" ]; then
-		test_run "$@"
-	else
-		#Decide if doing in background or not
-	    if [ "$BACKGROUND" = "true" ]; then
-	        actual_search "$@" &
-			sleep 1
-	    else
-	        actual_search "$@"
-	    fi
-	fi
+    
+    if [ "$DEBUG_TEST_FLAG" = "true" ]; then
+        test_run "$@"
+    else
+        #Decide if doing in background or not
+        if [ "$BACKGROUND" = "true" ]; then
+            #make sure we don't fork-bomb, so run at max $MAX_PROCESSES at once
+            while [ true ] ; do
+                jobcnt=(`jobs -pr`)
+                if [ ${#jobcnt[@]} -lt $MAX_PROCESSES ] ; then
+                    actual_search "$@" &
+                    break
+                else
+                    sleep 1
+                fi
+            done
+        else
+            actual_search "$@"
+        fi
+    fi
 
 }
 
@@ -181,7 +188,7 @@ function actual_search()
     OUTFILE="$5"
     ARGS_FOR_GREP="$6" #usually just -i for case insensitive or empty, very rare we use -o for match-only part with no context info
     #echo "$COMMENT, $SEARCH_REGEX, $OUTFILE, $ARGS_FOR_GREP, $WRITE_COMMENT, $BACKGROUND, $GREP_COMMAND, $STANDARD_GREP_ARGUMENTS, $TARGET"
-    echo "Searching (background:$BACKGROUND args for grep:$ARGS_FOR_GREP) for $SEARCH_REGEX --> writing to $OUTFILE"
+    echo "Searching (processes:$MAX_PROCESSES args for grep:$ARGS_FOR_GREP) for $SEARCH_REGEX --> writing to $OUTFILE"
     if [ "$WRITE_COMMENT" = "true" ]; then
         echo "# Info: $COMMENT" >> "$TARGET/$OUTFILE"
         echo "# Filename $OUTFILE" >> "$TARGET/$OUTFILE"
@@ -206,15 +213,15 @@ function test_run()
     OUTFILE="$5"
     ARGS_FOR_GREP="$6"
     #echo "Testing: $COMMENT, $SEARCH_REGEX, $OUTFILE, $ARGS_FOR_GREP, $WRITE_COMMENT, $BACKGROUND, $GREP_COMMAND, $STANDARD_GREP_ARGUMENTS, $TARGET"
-	#First, test that regexes match the example
+    #First, test that regexes match the example
     echo "$EXAMPLE" > "testing/temp_file.txt"
     $GREP_COMMAND $ARGS_FOR_GREP $STANDARD_GREP_ARGUMENTS "$SEARCH_REGEX" "testing/temp_file.txt" > /dev/null
     if [ $? -ne 0 ]; then
         echo "FAIL! $EXAMPLE was not matched for regex $SEARCH_REGEX"
-	#else
-	    #echo "PASS! $SEARCH_REGEX"
-	fi
-	
+    #else
+        #echo "PASS! $SEARCH_REGEX"
+    fi
+    
 }
 
 
@@ -268,7 +275,7 @@ if [ "$DO_JAVA" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'KeyGenerator\.getInstance\(' \
     "2_java_crypto_keygenerator-getinstance.txt"
-	
+    
     search "Occurences of Cipher.getInstance(ALGORITHM) it's interesting to see where the key goes next, where it's stored or accidentially written to a log file. Make sure the cipher is secure." \
     'Cipher.getInstance("RSA/NONE/NoPadding");' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -280,7 +287,7 @@ if [ "$DO_JAVA" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'new Random\(' \
     "2_java_crypto_random.txt"
-	
+    
     search "The Math.random class shouldn't be used for crypthography in Java, the SecureRandom should be used instead." \
     'Math.random();' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -687,95 +694,95 @@ if [ "$DO_JAVA" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'InvokerTransformer' \
     "2_java_serialization-invokertransformer.txt"
-	
+    
     search 'File.createTempFile is prone to race condition under certain circumstances, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
     'File.createTempFile();' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.createTempFile\(' \
     "3_java_createTempFile.txt"
-	
+    
     search 'HttpServletRequest.getRequestedSessionId returns the session ID requested by the client in the HTTP cookie header, not the one set by the server, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
     'HttpServletRequest.getRequestedSessionId();' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.getRequestedSessionId\(' \
     "3_java_getRequestedSessionId.txt"
-	
+    
     search 'NullCipher is obviously a cipher that is not secure, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
     'new NullCipher();' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'NullCipher' \
     "3_java_NullCipher.txt"
-	
+    
     search 'Dynamic class loading?, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
     'Class c = Class.forName(cn);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'Class\.forName' \
     "3_java_class_forName.txt"
-	
+    
     search 'New cookie should automatically be followed by c.setSecure(true); to make sure the secure flag ist set, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
     'Cookie c = new Cookie(a, b);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'new\sCookie\(' \
     "3_java_new_cookie.txt"
-	
+    
     search 'Servlet methods that throw exceptions might reveal sensitive information, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
     'public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "void do.{0,$WILDCARD_LONG}throws.{0,$WILDCARD_LONG}ServletException" \
     "3_java_servlet_exception.txt"
-	
+    
     search 'Security decisions should not be done based on the HTTP referer header as it is attacker chosen, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
     'String referer = request.getHeader("referer");' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.getHeader\("referer' \
     "3_java_getHeader_referer.txt"
-	
+    
     search 'Usually it is a bad idea to subclass cryptographic implementation, developers might break the implementation, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
     'MyCryptographicAlgorithm extends MessageDigest {' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "extends\s{0,$WILDCARD_SHORT}MessageDigest" \
     "3_java_extends_MessageDigest.txt"
-	
+    
     search 'Usually it is a bad idea to subclass cryptographic implementation, developers might break the implementation, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
     'MyCryptographicAlgorithm extends WhateverCipher {' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "extends\s{0,$WILDCARD_SHORT}cipher" \
     "3_java_extends_cipher.txt" \
-	"-i"
-	
+    "-i"
+    
     search "printStackTrace logs and should not be in production (also logs to Android log), information leakage, etc." \
     '.printStackTrace()' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.printStackTrace\(' \
     "3_java_printStackTrace.txt"
-	
+    
     search "setAttribute is usually used to set an attribute of a session object, untrusted data should not be added to a session object" \
     'session.setAttribute("abc", untrusted_input);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.setAttribute\(' \
     "3_java_setAttribute.txt"
-	
+    
 fi
 
 #The FLEX Flash specific stuff
 if [ "$DO_FLEX" = "true" ]; then
-	search 'Flex Flash has Security.allowDomain that should be tightly set and for sure not to *, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=flex' \
-	'Security.allowDomain("*");' \
-	'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-	'Security\.allowDomain' \
-	"3_flex_security_allowDomain.txt"
-	
-	search 'Flex Flash has trace to output debug info, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=flex' \
-	'trace("output:" + value);' \
-	'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-	'trace\(' \
-	"3_flex_trace.txt"
-	
-	search 'ExactSettings to false makes cross-domain attacks possible, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=flex' \
-	'Security.exactSettings = false;' \
-	'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-	'Security\.exactSettings' \
-	"3_flex_exactSettings.txt"
+    search 'Flex Flash has Security.allowDomain that should be tightly set and for sure not to *, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=flex' \
+    'Security.allowDomain("*");' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'Security\.allowDomain' \
+    "3_flex_security_allowDomain.txt"
+    
+    search 'Flex Flash has trace to output debug info, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=flex' \
+    'trace("output:" + value);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'trace\(' \
+    "3_flex_trace.txt"
+    
+    search 'ExactSettings to false makes cross-domain attacks possible, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=flex' \
+    'Security.exactSettings = false;' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'Security\.exactSettings' \
+    "3_flex_exactSettings.txt"
 fi
 
 #The JSP specific stuff
@@ -947,26 +954,26 @@ if [ "$DO_DOTNET" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "Console\.WriteLine" \
     "3_dotnet_console_WriteLine.txt"
-	
+    
     search "TripleDESCryptoServiceProvider, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=cs" \
     'new TripleDESCryptoServiceProvider();' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "TripleDESCryptoServiceProvider" \
     "3_dotnet_TripleDESCryptoServiceProvider.txt"
-	
+    
     search "unchecked allows to disable exceptions for integer overflows, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=cs" \
     'int d = unchecked(list.Sum()); or also as a block unchecked { int e = list.Sum(); }' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "unchecked" \
     "3_dotnet_unchecked.txt"
-	
+    
     search "Code access security permission changing via reflection, see one of the rules of https://www.owasp.org/index.php/Category:OWASP_Code_Crawler" \
     'ReflectionPermission.MemberAccess' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "ReflectionPermission" \
     "3_dotnet_ReflectionPermission.txt"
-	
-	
+    
+    
     
 fi
 
@@ -1422,37 +1429,37 @@ if [ "$DO_JAVASCRIPT" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.outerHTML\s{0,$WILDCARD_SHORT}=" \
     "4_js_dom_xss_outerHTML.txt"
-	
+    
     search "Console should not be logged to in production" \
     'console.log(user_password);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "console\." \
     "4_js_console.txt"
-	
+    
     search "The postMessage in JavaScript should explicitly not be used with targetOrigin set to * and check how messages are exchanged, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=js" \
     'aWindow.postMessage(message, "*");' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "myWindow\.postMessage\(" \
     "4_js_postMessage.txt"
-	
+    
     search "The debugger statement is basically a breakpoint, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=js" \
     'debugger;' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "debugger;" \
     "4_js_debugger.txt"
-	
+    
     search "The constructor for functions can be used as a replacement for eval, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=js" \
     'f = new Function("name", "return 123 + name"); ' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "new\sFunction.{0,$WILDCARD_SHORT}+" \
     "3_js_new_function_eval.txt"
-	
+    
     search "Sensitive information in localStorage is not encrypted, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=js" \
     'localStorage.setItem("data", sensitive_data); ' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "localStorage" \
     "3_js_localStorage.txt"
-	
+    
     search "Sensitive information in sessionStorage is not encrypted, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=js" \
     'sessionStorage.setItem("data", sensitive_data); ' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -1975,7 +1982,7 @@ if [ "$DO_IOS" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'openURL:' \
     "3_ios_string_format_url_handler_openURL.txt"
-	
+    
     search "NSAllowsArbitraryLoads set to 1 allows iOS applications to load resources over insecure non-TLS protocols." \
     'NSAllowsArbitraryLoads' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -2377,135 +2384,135 @@ fi
 #- Function names are case sensitive
 #- Due to the many flexible way of calling a function, the regexes will only catch "the most natural" case
 if [ "$DO_PYTHON" = "true" ]; then
-	
-	echo "#Doing python"
     
-	search "Input function in Python 2.X is dangerous (but not in python 3.X), as it read from stdin and then evals the input, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    echo "#Doing python"
+    
+    search "Input function in Python 2.X is dangerous (but not in python 3.X), as it read from stdin and then evals the input, see https://access.redhat.com/blogs/766093/posts/2592591" \
     'input()' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "input\s{0,$WILDCARD_SHORT}\(" \
     "3_python_input_function.txt"
-	
-	search "Assert statements are not compiled into the optimized byte code, therefore can not be used for security purposes, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    
+    search "Assert statements are not compiled into the optimized byte code, therefore can not be used for security purposes, see https://access.redhat.com/blogs/766093/posts/2592591" \
     'assert variable and other' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "assert\s{1,$WILDCARD_SHORT}" \
     "3_python_assert_statement.txt"
-	
-	search "The 'is' object identity operator should not be used for numbers, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    
+    search "The 'is' object identity operator should not be used for numbers, see https://access.redhat.com/blogs/766093/posts/2592591" \
     '1+1 is 2' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\d\s{1,$WILDCARD_SHORT}is\s{1,$WILDCARD_SHORT}" \
     "2_python_is_object_identity_operator_left.txt"
-	
-	search "The 'is' object identity operator should not be used for numbers, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    
+    search "The 'is' object identity operator should not be used for numbers, see https://access.redhat.com/blogs/766093/posts/2592591" \
     '1+1 is 2' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\s{1,$WILDCARD_SHORT}is\s{1,$WILDCARD_SHORT}\d" \
     "2_python_is_object_identity_operator_right.txt"
-	
-	search "The 'is' object identity operator should not be used for numbers, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    
+    search "The 'is' object identity operator should not be used for numbers, see https://access.redhat.com/blogs/766093/posts/2592591" \
     'object.an_integer is other_object.other_integer' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\sis\s" \
     "5_python_is_object_identity_operator_general.txt"
-	
-	search "The float type can not be reliably compared for equality, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    
+    search "The float type can not be reliably compared for equality, see https://access.redhat.com/blogs/766093/posts/2592591" \
     '2.2 * 3.0 == 3.3 * 2.2' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\d\.\d{1,$WILDCARD_SHORT}\s{1,$WILDCARD_SHORT}==\s{1,$WILDCARD_SHORT}" \
     "2_python_float_equality_left.txt"
-	
-	search "The float type can not be reliably compared for equality, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    
+    search "The float type can not be reliably compared for equality, see https://access.redhat.com/blogs/766093/posts/2592591" \
     '2.2 * 3.0 == 3.3 * 2.2' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\s{1,$WILDCARD_SHORT}==\s{1,$WILDCARD_SHORT}\d\.\d{1,$WILDCARD_SHORT}" \
     "2_python_float_equality_right.txt"
-	
-	search "The float type can not be reliably compared for equality. Make sure none of these comparisons uses floats, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    
+    search "The float type can not be reliably compared for equality. Make sure none of these comparisons uses floats, see https://access.redhat.com/blogs/766093/posts/2592591" \
     '2.2 * 3.0 == 3.3 * 2.2' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\s{1,$WILDCARD_SHORT}==\s{1,$WILDCARD_SHORT}" \
     "2_python_float_equality_general.txt"
-	
-	search "Double underscore variable visibility can be tricky, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    
+    search "Double underscore variable visibility can be tricky, see https://access.redhat.com/blogs/766093/posts/2592591" \
     'self.__private' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "self\.__" \
     "4_python_double_underscore_general.txt"
-	
-	search "Doing things with __code__ is very low level" \
+    
+    search "Doing things with __code__ is very low level" \
     'object.__code__' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "__code__" \
     "3_python_double_underscore_code.txt"
-	
-	search "The shell=True named argument of the subprocess module makes command injection possible, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    
+    search "The shell=True named argument of the subprocess module makes command injection possible, see https://access.redhat.com/blogs/766093/posts/2592591" \
     'subprocess.call(unvalidated_input, shell=True)' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "shell=True" \
     "3_python_subprocess_shell_true.txt"
-	
-	search "mktemp of the tempfile module is flawed, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    
+    search "mktemp of the tempfile module is flawed, see https://access.redhat.com/blogs/766093/posts/2592591" \
     'tempfile.mktemp()' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "mktemp\s{0,$WILDCARD_SHORT}\(" \
     "3_python_tempfile_mktemp.txt"
-	
-	search "shutil.copyfile is flawed as it creates the destination in the most insecure manner possible, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    
+    search "shutil.copyfile is flawed as it creates the destination in the most insecure manner possible, see https://access.redhat.com/blogs/766093/posts/2592591" \
     'shutil.copyfile(src, dst)' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "copyfile\s{0,$WILDCARD_SHORT}\(" \
     "3_python_shutil_copyfile.txt"
-	
-	search "shutil.move is flawed and silently leaves the old file behind if the source and destination are on different file systems, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    
+    search "shutil.move is flawed and silently leaves the old file behind if the source and destination are on different file systems, see https://access.redhat.com/blogs/766093/posts/2592591" \
     'shutil.move(src, dst)' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "move\s{0,$WILDCARD_SHORT}\(" \
     "3_python_shutil_move.txt"
-	
-	search "yaml.load is flawed and uses pickle to deserialize its data, which leads to code execution, see https://access.redhat.com/blogs/766093/posts/2592591 . The proper way is to use safe_load." \
+    
+    search "yaml.load is flawed and uses pickle to deserialize its data, which leads to code execution, see https://access.redhat.com/blogs/766093/posts/2592591 . The proper way is to use safe_load." \
     'import yaml' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "import\s{0,$WILDCARD_SHORT}yaml" \
     "3_python_yaml_import.txt"
-	
-	search "pickle leads to code execution if untrusted input is deserialized, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    
+    search "pickle leads to code execution if untrusted input is deserialized, see https://access.redhat.com/blogs/766093/posts/2592591" \
     'import pickle' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "import\s{0,$WILDCARD_SHORT}pickle" \
     "3_python_pickle_import.txt"
-	
-	search "pickle leads to code execution if untrusted input is deserialized, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    
+    search "pickle leads to code execution if untrusted input is deserialized, see https://access.redhat.com/blogs/766093/posts/2592591" \
     'from pickle' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "from\s{0,$WILDCARD_SHORT}pickle" \
     "3_python_pickle_from.txt"
-	
-	search "shelve leads to code execution if untrusted input is deserialized, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    
+    search "shelve leads to code execution if untrusted input is deserialized, see https://access.redhat.com/blogs/766093/posts/2592591" \
     'import shelve' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "import\s{0,$WILDCARD_SHORT}shelve" \
     "3_python_shelve_import.txt"
-	
-	search "shelve leads to code execution if untrusted input is deserialized, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    
+    search "shelve leads to code execution if untrusted input is deserialized, see https://access.redhat.com/blogs/766093/posts/2592591" \
     'from shelve' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "from\s{0,$WILDCARD_SHORT}shelve" \
     "3_python_shelve_from.txt"
-	
-	search "jinja2 in its default configuration leads to XSS if untrusted input is used for rendering, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    
+    search "jinja2 in its default configuration leads to XSS if untrusted input is used for rendering, see https://access.redhat.com/blogs/766093/posts/2592591" \
     'import jinja2' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "import\s{0,$WILDCARD_SHORT}jinja2" \
     "3_python_jinja2_import.txt"
-	
-	search "jinja2 in its default configuration leads to XSS if untrusted input is used for rendering, see https://access.redhat.com/blogs/766093/posts/2592591" \
+    
+    search "jinja2 in its default configuration leads to XSS if untrusted input is used for rendering, see https://access.redhat.com/blogs/766093/posts/2592591" \
     'from jinja2' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "from\s{0,$WILDCARD_SHORT}jinja2" \
     "3_python_jinja2_from.txt"
-	
+    
 fi
 
 #Very general stuff (language agnostic)
@@ -2700,7 +2707,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     'file://' \
     "3_general_non_ssl_uris_file.txt" \
     "-i"
-	
+    
     search "jdbc URIs" \
     'jdbc:mysql://localhost/test?password=ABC' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -2916,35 +2923,35 @@ if [ "$DO_GENERAL" = "true" ]; then
     'referer' \
     "3_general_referer.txt" \
     "-i"
-	
+    
     search "Generic search for SQL injection, FROM and WHERE being SQL keywords and + meaning string concatenation" \
     'q = "SELECT * from USERS where NAME=" + user;' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "from\s.{0,$WILDCARD_LONG}\swhere\s.{0,$WILDCARD_LONG}+" \
     "3_general_sqli_generic.txt" \
     "-i"
-	
+    
     search "A form of query often used for LDAP, should be checked if it doesn't lead to LDAP injection and/or DoS" \
     'String ldap_query = "(&(param=user)(name=" + name_unsanitized + "))";' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\(&\(.{0,$WILDCARD_SHORT}=" \
     "3_general_ldap_generic.txt" \
     "-i"
-	
+    
     search "Generic exec call often used for OS command execution" \
     'runTime.exec("echo "+unsanitized_input);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "exec\(" \
     "3_general_exec_generic.txt" \
     "-i"
-	
+    
     search "Generic sleep call, if server side this could block thread/process and therefore enable to easily do Denial of Service attacks" \
     'sleep(2);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "sleep" \
     "3_general_sleep_generic.txt" \
     "-i"
-	
+    
 fi
 
 echo ""

@@ -50,7 +50,6 @@ WRITE_COMMENT="true"
 #of random characters that can be in between. The higher the value the more strings will potentially be flagged.
 WILDCARD_SHORT=20
 WILDCARD_LONG=200
-WILDCARD_EXTRA_LONG=500
 #Do all greps in background with & while only using MAX_PROCESSES subprocesses
 BACKGROUND="true"
 MAX_PROCESSES=8
@@ -78,6 +77,7 @@ DO_ANDROID="true"
 DO_IOS="true"
 
 DO_PYTHON="true"
+DO_RUBY="true"
 
 #C and derived languages
 DO_C="true"
@@ -117,20 +117,22 @@ DO_GENERAL="true"
 # - Add/improve comments everywhere
 # - Add comments about case-sensitivity and whitespace behavior of languages and other syntax rules that might influence our regexes
 # - Duplicate a couple of regexes to ones that *only* have true positives usually (or at least a lot less false positives)
-# - Have a look at rules in files starting with mod* at https://github.com/nccgroup/VCG/tree/master/VisualCodeGrepper and other projects such as https://sonarqube.com/coding_rules#types=VULNERABILITY and the list at https://www.owasp.org/index.php/Static_Code_Analysis
+# - Have a look at rules in files starting with mod* at https://github.com/nccgroup/VCG/tree/master/VisualCodeGrepper and other projects such as the ones in the list at https://www.owasp.org/index.php/Static_Code_Analysis
 
 #When the following flag is enable the tool switches to testing mode and won't do the actual work
 DEBUG_TEST_FLAG="false"
+#A helper var for debugging purposes
+DEBUG_TMP_OUTFILE_NAMES=""
 
 if [ $# -lt 1 ]
 then
-  echo "Usage: `basename $0` directory-to-grep-through"
+  echo "Usage: $(basename '$0') directory-to-grep-through"
   exit 0
 fi
 
 if [ "$1" = "." ]
 then
-  echo "You are shooting yourself in the foot. Do not grep through . but rather cd into parent directory and mv `basename $0` there."
+  echo "You are shooting yourself in the foot. Do not grep through . but rather cd into parent directory and mv $(basename '$0') there."
   echo "READ THE HOWTO (3 lines)"
   exit 0
 fi
@@ -149,6 +151,10 @@ SEARCH_FOLDER=${1%/}
 
 mkdir "$TARGET"
 
+if [ "$DEBUG_TEST_FLAG" = "true" ]; then
+    echo "WE ARE RUNNING IN TEST MODE. NOT DOING THE ACTUAL WORK, JUST VERIFYING THIS SCRIPT IS DOING WHAT IT SHOULD."
+    echo "If you want to run in normal mode, set DEBUG_TEST_FLAG to false"
+fi
 echo "Your standard grep arguments (customize in OPTIONS section of this script): $STANDARD_GREP_ARGUMENTS"
 echo "Output will be put into this folder: $TARGET"
 echo "You are currently greping through folder: $SEARCH_FOLDER"
@@ -163,8 +169,8 @@ function search()
         #Decide if doing in background or not
         if [ "$BACKGROUND" = "true" ]; then
             #make sure we don't fork-bomb, so run at max $MAX_PROCESSES at once
-            while [ true ] ; do
-                jobcnt=(`jobs -pr`)
+            while true ; do
+                jobcnt=$(jobs -pr)
                 if [ ${#jobcnt[@]} -lt $MAX_PROCESSES ] ; then
                     actual_search "$@" &
                     break
@@ -220,6 +226,20 @@ function test_run()
         echo "FAIL! $EXAMPLE was not matched for regex $SEARCH_REGEX"
     #else
         #echo "PASS! $SEARCH_REGEX"
+    fi
+    #Second, check that the OUTFILE name is unique
+    echo $DEBUG_TMP_OUTFILE_NAMES|$GREP_COMMAND -q $OUTFILE
+    if [ $? -eq 0 ]; then
+        echo "FAIL! $OUTFILE is specified twice in the script!"
+    fi
+    DEBUG_TMP_OUTFILE_NAMES="$DEBUG_TMP_OUTFILE_NAMES $OUTFILE"
+    #Third, check if comment empty
+    if [ "$COMMENT" = "" ]; then
+        echo "FAIL! $OUTFILE has no comment section!"
+    fi
+    #Four, check if example empty
+    if [ "$EXAMPLE" = "" ]; then
+        echo "FAIL! $OUTFILE has no example section!"
     fi
     
 }
@@ -409,6 +429,25 @@ if [ "$DO_JAVA" = "true" ]; then
     "\.getRemoteHost\(" \
     "3_java_http_getRemoteHost.txt"
     
+    search "Java get remote user" \
+    '.getRemoteUser(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\.getRemoteUser\(" \
+    "3_java_http_getRemoteUser.txt"
+    
+    search "Java is secure" \
+    '.isSecure(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\.isSecure\(" \
+    "3_java_http_isSecure.txt"
+    
+    search "Java get requested session ID" \
+    '.getRequestedSessionId(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\.getRequestedSessionId\(" \
+    "3_java_http_getRequestedSessionId.txt"
+    
+        
     search "Java get content type" \
     '.getContentType(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -677,7 +716,7 @@ if [ "$DO_JAVA" = "true" ]; then
     "2_java_serialization-hexserialized-data.txt" \
     "-i"
     
-    search 'Java serialized data? Usually Java serialized data in base64 format starts with rO0 or non-base64 with hex ACED0005. Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ for example' \
+    search 'Java serialized data? Usually Java serialized data in base64 format starts with rO0 or non-base64 with hex ACED0005. Decidezation is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ for example' \
     '\xAC\xED\x00\x05' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\\xAC\\xED\\x00\\x05' \
@@ -687,7 +726,7 @@ if [ "$DO_JAVA" = "true" ]; then
     'JMXInvokerServlet' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'JMXInvokerServlet' \
-    "2_java_serialization-serialized-data.txt"
+    "2_java_serialization-JMXInvokerServlet.txt"
     
     search 'InvokerTransformer is a vulnerable commons collection class that can be exploited if the web application has a Java object deserialization interface/issue, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ for example' \
     'InvokerTransformer' \
@@ -740,13 +779,13 @@ if [ "$DO_JAVA" = "true" ]; then
     search 'Usually it is a bad idea to subclass cryptographic implementation, developers might break the implementation, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
     'MyCryptographicAlgorithm extends MessageDigest {' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "extends\s{0,$WILDCARD_SHORT}MessageDigest" \
+    "extends.{0,$WILDCARD_LONG}MessageDigest" \
     "3_java_extends_MessageDigest.txt"
     
     search 'Usually it is a bad idea to subclass cryptographic implementation, developers might break the implementation, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
     'MyCryptographicAlgorithm extends WhateverCipher {' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "extends\s{0,$WILDCARD_SHORT}cipher" \
+    "extends.{0,$WILDCARD_LONG}cipher" \
     "3_java_extends_cipher.txt" \
     "-i"
     
@@ -761,6 +800,19 @@ if [ "$DO_JAVA" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.setAttribute\(' \
     "3_java_setAttribute.txt"
+    
+    search "StreamTokenizer, look for parsing errors, see https://docs.oracle.com/javase/7/docs/api/java/io/StreamTokenizer.html" \
+    'StreamTokenizer' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'StreamTokenizer' \
+    "3_java_StreamTokenizer.txt"
+    
+    search "getResourceAsStream, see http://docs.oracle.com/javase/7/docs/api/java/lang/Class.html#getResourceAsStream(java.lang.String)" \
+    'getResourceAsStream' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'getResourceAsStream' \
+    "3_java_getResourceAsStream.txt"
+    
     
 fi
 
@@ -894,7 +946,7 @@ if [ "$DO_SPRING" = "true" ]; then
 fi
 
 #The Java Struts specific stuff
-if [ "$DO_SPRING" = "true" ]; then
+if [ "$DO_STRUTS" = "true" ]; then
     
     echo "#Doing Java Struts"
     
@@ -967,12 +1019,77 @@ if [ "$DO_DOTNET" = "true" ]; then
     "unchecked" \
     "3_dotnet_unchecked.txt"
     
-    search "Code access security permission changing via reflection, see one of the rules of https://www.owasp.org/index.php/Category:OWASP_Code_Crawler" \
+    search "Code access security permission changing via reflection, also one of the rules of https://www.owasp.org/index.php/Category:OWASP_Code_Crawler" \
     'ReflectionPermission.MemberAccess' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "ReflectionPermission" \
     "3_dotnet_ReflectionPermission.txt"
     
+    search "Hidden input fields for HTML, also one of the rules of https://www.owasp.org/index.php/Category:OWASP_Code_Crawler" \
+    'system.web.ui.htmlcontrols.htmlinputhidden' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "htmlinputhidden" \
+    "3_dotnet_htmlinputhidden.txt"
+    
+    search "Configuration for request encoding, also one of the rules of https://www.owasp.org/index.php/Category:OWASP_Code_Crawler" \
+    'requestEncoding' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "requestEncoding" \
+    "3_dotnet_requestEncoding.txt"
+    
+    search "Configuration for custom errors, also one of the rules of https://www.owasp.org/index.php/Category:OWASP_Code_Crawler" \
+    'CustomErrors' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "CustomErrors" \
+    "3_dotnet_CustomErrors.txt"
+    
+    search "Used for IO in .NET, also one of the rules of https://www.owasp.org/index.php/Category:OWASP_Code_Crawler" \
+    'ObjectInputStream' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "ObjectInputStream" \
+    "3_dotnet_ObjectInputStream.txt"
+    
+    search "Used for IO in .NET, also one of the rules of https://www.owasp.org/index.php/Category:OWASP_Code_Crawler" \
+    'pipedinputstream' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "pipedinputstream" \
+    "3_dotnet_pipedinputstream.txt"
+    
+    search "Used for IO in .NET, also one of the rules of https://www.owasp.org/index.php/Category:OWASP_Code_Crawler" \
+    'objectstream' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "objectstream" \
+    "3_dotnet_objectstream.txt"
+    
+    search "Authentication as specified on https://msdn.microsoft.com/en-us/library/aa289844(v=vs.71).aspx , also one of the rules of https://www.owasp.org/index.php/Category:OWASP_Code_Crawler" \
+    'Application_OnAuthenticateRequest' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "AuthenticateRequest" \
+    "3_dotnet_AuthenticateRequest.txt"
+    
+    search "Authorization as specified on https://msdn.microsoft.com/en-us/library/system.web.httpapplication.authorizerequest(v=vs.110).aspx , also one of the rules of https://www.owasp.org/index.php/Category:OWASP_Code_Crawler" \
+    'AuthorizeRequest' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "AuthorizeRequest" \
+    "3_dotnet_AuthorizeRequest.txt"
+    
+    search "Session_OnStart as specified on https://msdn.microsoft.com/en-us/library/ms524776(v=vs.90).aspx , also one of the rules of https://www.owasp.org/index.php/Category:OWASP_Code_Crawler" \
+    'Session_OnStart' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "Session_OnStart" \
+    "3_dotnet_Session_OnStart.txt"
+    
+    search "SecurityCriticalAttribute as specified on https://msdn.microsoft.com/en-us/library/system.security.securitycriticalattribute.aspx" \
+    'SecurityCriticalAttribute' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "SecurityCriticalAttribute" \
+    "3_dotnet_SecurityCriticalAttribute.txt"
+    
+    search "SecurityPermission as specified on https://msdn.microsoft.com/en-us/library/system.security.permissions.securitypermission(v=vs.110).aspx" \
+    'SecurityPermission' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "SecurityPermission" \
+    "3_dotnet_SecurityPermission.txt"
     
     
 fi
@@ -1008,13 +1125,6 @@ if [ "$DO_PHP" = "true" ]; then
     '\$_REQUEST' \
     "3_php_request.txt"
     
-    search "Dangerous PHP function: popen" \
-    'popen(' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "popen\s{0,$WILDCARD_SHORT}\(" \
-    "2_php_popen.txt" \
-    "-i"
-    
     search "Dangerous PHP function: proc_" \
     'proc_' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -1034,13 +1144,6 @@ if [ "$DO_PHP" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'escapeshell' \
     "2_php_escapeshell.txt" \
-    "-i"
-    
-    search "Dangerous PHP function: system" \
-    'system(' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "system\s{0,$WILDCARD_SHORT}\(" \
-    "2_php_system.txt" \
     "-i"
     
     search "Dangerous PHP function: fopen" \
@@ -1439,7 +1542,7 @@ if [ "$DO_JAVASCRIPT" = "true" ]; then
     search "The postMessage in JavaScript should explicitly not be used with targetOrigin set to * and check how messages are exchanged, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=js" \
     'aWindow.postMessage(message, "*");' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "myWindow\.postMessage\(" \
+    "\.postMessage\(" \
     "4_js_postMessage.txt"
     
     search "The debugger statement is basically a breakpoint, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=js" \
@@ -1562,50 +1665,37 @@ if [ "$DO_MOBILE" = "true" ]; then
     'root detection' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "root.{0,$WILDCARD_SHORT}detection" \
-    "2_general_mobile_root_detection_root-detection.txt" \
+    "2_mobile_root_detection_root-detection.txt" \
     "-i"
     
     search "Root detection." \
     'RootedDevice' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "root.{0,$WILDCARD_SHORT}Device" \
-    "2_general_mobile_root_detection_root-device.txt" \
+    "2_mobile_root_detection_root-device.txt" \
     "-i"
     
     search "Root detection." \
     'isRooted' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "is.{0,$WILDCARD_SHORT}rooted" \
-    "2_general_mobile_root_detection_isRooted.txt" \
+    "2_mobile_root_detection_isRooted.txt" \
     "-i"
     
     search "Root detection." \
     'detect root' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "detect.{0,$WILDCARD_SHORT}root" \
-    "2_general_mobile_root_detection_detectRoot.txt" \
+    "2_mobile_root_detection_detectRoot.txt" \
     "-i"
     
     search "Jailbreak." \
     'jail_break' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "jail.{0,$WILDCARD_SHORT}break" \
-    "2_general_mobile_jailbreak.txt" \
+    "2_mobile_jailbreak.txt" \
     "-i"
     
-    search "Superuser. Sometimes the root user of *nix is referenced, sometimes it is about root detection on mobile phones (e.g. Android Superuser.apk app detection)" \
-    'super_user' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "super.{0,$WILDCARD_SHORT}user" \
-    "2_general_superuser.txt" \
-    "-i"
-    
-    search "Su and sudo binary and variants of it" \
-    'sudo binary' \
-    'suite.api.java.rql.construct.Binary, super(name, contentType, binary' \
-    "su.{0,$WILDCARD_LONG}binary" \
-    "2_general_su-binary.txt" \
-    "-i"
 fi
 
 
@@ -2338,7 +2428,7 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     search "Authorization" \
     'Authorisation' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'Authoris?z?ation' \
+    'Authori[sz]ation' \
     "4_cryptocred_authorization.txt" \
     "-i"
     
@@ -2515,10 +2605,130 @@ if [ "$DO_PYTHON" = "true" ]; then
     
 fi
 
+#The ruby part
+#ruby is case sensitive in general
+#If you have a ruby application, the static analyzer https://github.com/presidentbeef/brakeman seems pretty promising
+if [ "$DO_RUBY" = "true" ]; then
+
+    echo "#Doing ruby"
+    
+    search "Basic authentication in ruby with http_basic_authenticate_with" \
+    'http_basic_authenticate_with' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "http_basic_authenticate_with" \
+    "2_ruby_http_basic_authenticate_with.txt"
+    
+    search "Content tag can lead to XSS, see https://github.com/presidentbeef/brakeman/blob/master/lib/brakeman/checks/check_content_tag.rb" \
+    'content_tag :tag, body' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "content_tag" \
+    "2_ruby_content_tag.txt"
+    
+    search "Possible deserialization issues, see https://github.com/presidentbeef/brakeman/blob/master/lib/brakeman/checks/check_deserialize.rb" \
+    ':YAML' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    ":YAML" \
+    "2_ruby_yaml.txt"
+    
+    search "Possible deserialization issues, see https://github.com/presidentbeef/brakeman/blob/master/lib/brakeman/checks/check_deserialize.rb" \
+    ':load' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    ":load" \
+    "2_ruby_load.txt"
+    
+    search "Possible deserialization issues, see https://github.com/presidentbeef/brakeman/blob/master/lib/brakeman/checks/check_deserialize.rb" \
+    ':load_documents' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    ":load_documents" \
+    "2_ruby_load_documents.txt"
+    
+    search "Possible deserialization issues, see https://github.com/presidentbeef/brakeman/blob/master/lib/brakeman/checks/check_deserialize.rb" \
+    ':load_stream' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    ":load_stream" \
+    "2_ruby_load_stream.txt"
+    
+    search "Possible deserialization issues, see https://github.com/presidentbeef/brakeman/blob/master/lib/brakeman/checks/check_deserialize.rb" \
+    ':parse_documents' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    ":parse_documents" \
+    "2_ruby_parse_documents.txt"
+    
+    search "Possible deserialization issues, see https://github.com/presidentbeef/brakeman/blob/master/lib/brakeman/checks/check_deserialize.rb" \
+    ':parse_stream' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    ":parse_stream" \
+    "2_ruby_parse_stream.txt"
+    
+    search "Detailed exceptions shown, see https://github.com/presidentbeef/brakeman/blob/master/lib/brakeman/checks/check_detailed_exceptions.rb" \
+    ':show_detailed_exceptions' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    ":show_detailed_exceptions" \
+    "2_ruby_show_detailed_exceptions.txt"
+    
+    search "Spawning a subshell? See https://github.com/presidentbeef/brakeman/blob/master/lib/brakeman/checks/check_execute.rb" \
+    ':capture2e' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    ":capture" \
+    "2_ruby_capture.txt"
+    
+    search "XSRF protection in ruby. See http://api.rubyonrails.org/classes/ActionController/RequestForgeryProtection/ClassMethods.html" \
+    'protect_from_forgery' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "protect_from_forgery" \
+    "2_ruby_protect_from_forgery.txt"
+    
+    search "HTTP redirects in ruby. See https://github.com/presidentbeef/brakeman/blob/master/lib/brakeman/checks/check_redirect.rb" \
+    ':redirect_to' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    ":redirect_to" \
+    "2_ruby_redirect_to.txt"
+    
+    search "Authenticity token verficiation skipped? See https://github.com/presidentbeef/brakeman/blob/master/lib/brakeman/checks/check_skip_before_filter.rb" \
+    'verify_authenticity_token' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "verify_authenticity_token" \
+    "2_ruby_verify_authenticity_token.txt"
+
+fi
+
 #Very general stuff (language agnostic)
 if [ "$DO_GENERAL" = "true" ]; then
     
     echo "#Doing general"
+    
+    
+    search "A generic templating pattern that is used in HTML generation of Java (JSP), Ruby and client-side JavaScript libraries." \
+    'In Java <%=bean.getName()%> or in ruby <%= parameter[:value] %>' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '<%=' \
+    "2_general_html_templating.txt"
+    
+    search "Superuser. Sometimes the root user of *nix is referenced, sometimes it is about root detection on mobile phones (e.g. Android Superuser.apk app detection)" \
+    'super_user' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "super.{0,$WILDCARD_SHORT}user" \
+    "2_general_superuser.txt" \
+    "-i"
+    
+    search "Su binary" \
+    'sudo binary' \
+    'suite.api.java.rql.construct.Binary, super(name, contentType, binary' \
+    "su.{0,$WILDCARD_LONG}binary" \
+    "2_general_su-binary.txt" \
+    "-i"
+    
+    search "sudo" \
+    'sudo make me a sandwich' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "sudo\s" \
+    "2_general_sudo.txt"
+    
+    search "Denying is often used for filtering, etc." \
+    'deny' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "[Dd]eny" \
+    "4_general_deny.txt"
     
     search "Exec mostly means executing on OS." \
     'exec (' \
@@ -2530,12 +2740,88 @@ if [ "$DO_GENERAL" = "true" ]; then
     'eval (' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "eval\s{0,$WILDCARD_SHORT}\(" \
-    "3_general_eval.txt"
+    "3_general_eval_narrow.txt"
+    
+    search "Eval mostly means evaluating commands." \
+    'eval' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "eval" \
+    "4_general_eval_wide.txt"
+    
+    search "Syscall: Command execution?" \
+    'syscall' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "sys.?call" \
+    "4_general_syscall.txt" \
+    "-i"
+    
+    search "system: Command execution?" \
+    'system(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "system\s{0,$WILDCARD_SHORT}\(" \
+    "3_general_system_narrow.txt" \
+    "-i"
+    
+    search "system: Command execution?" \
+    'system' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "system" \
+    "4_general_system_wide.txt" \
+    "-i"
+    
+    search "pipeline: Command execution?" \
+    'pipeline(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "pipeline\s{0,$WILDCARD_SHORT}\(" \
+    "3_general_pipeline_narrow.txt" \
+    "-i"
+    
+    search "pipeline: Command execution?" \
+    'pipeline' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "pipeline" \
+    "4_general_pipeline_wide.txt" \
+    "-i"
+    
+    search "popen: Command execution?" \
+    'popen(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "popen\s{0,$WILDCARD_SHORT}\(" \
+    "3_general_popen_narrow.txt" \
+    "-i"
+    
+    search "popen: Command execution?" \
+    'popen' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "popen" \
+    "4_general_popen_wide.txt" \
+    "-i"
+    
+    search "spawn: Command execution?" \
+    'spawn(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "spawn\s{0,$WILDCARD_SHORT}\(" \
+    "3_general_spawn_narrow.txt" \
+    "-i"
+    
+    search "spawn: Command execution?" \
+    'spawn' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "spawn" \
+    "4_general_spawn_wide.txt" \
+    "-i"
     
     search "Session timeouts should be reasonable short for things like sessions for web logins but can also lead to denial of service conditions in other cases." \
     'session-timeout' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'session-?\s?time-?\s?out' \
+    "3_general_session_timeout.txt" \
+    "-i"
+    
+    search "Timeout. Whatever timeout this might be, that might be interesting." \
+    'timeout' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'time-?\s?out' \
     "4_general_session_timeout.txt" \
     "-i"
     
@@ -2544,6 +2830,13 @@ if [ "$DO_GENERAL" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'setcookie' \
     "3_general_setcookie.txt" \
+    "-i"
+    
+    search "General serialisation code, can lead to command execution" \
+    'serialise' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'seriali[sz]e' \
+    "3_general_serialise.txt" \
     "-i"
     
     search "Relative paths. May allow an attacker to put something early in the search path (if parts are user supplied input) and overwrite behavior" \
@@ -2572,6 +2865,13 @@ if [ "$DO_GENERAL" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'backup' \
     "5_general_backup.txt" \
+    "-i"
+    
+    search "Kernel. A reference to something low level in a Kernel?" \
+    'Kernel' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'Kernel' \
+    "4_general_kernel.txt" \
     "-i"
     
     #Take care with the following regex, @ has a special meaning in double quoted strings, but not in single quoted strings
@@ -2613,6 +2913,13 @@ if [ "$DO_GENERAL" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'crack' \
     "4_general_crack.txt" \
+    "-i"
+    
+    search "Trick. Sounds suspicious." \
+    'trick' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'trick' \
+    "4_general_trick.txt" \
     "-i"
     
     search "Exploit and variants of it. Sounds suspicious." \
@@ -2832,15 +3139,22 @@ if [ "$DO_GENERAL" = "true" ]; then
     'YWJj YScqKyo6LV/Dpw==' \
     '/target/ //JQLite - the following ones shouldnt be an issue anymore as we require more than 6 bytes: done echo else gen/ ////' \
     '(?:[A-Za-z0-9+/]{4})+(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})' \
-    "2_general_base64.txt"
+    "2_general_base64_content.txt"
     #case sensitive, the regex is insensitive anyway
     
     search "Base64 URL-safe encoded data (that is more than 6 bytes long). To get from URL-safe base64 to regular base64 you need .replace('-','+').replace('_','/'). This regex won't detect a base64 encoded value over several lines..." \
     'YScqKyo6LV_Dpw==' \
     '/target/ //JQLite - the following ones shouldnt be an issue anymore as we require more than 6 bytes: done echo else gen/ ////' \
     '(?:[A-Za-z0-9\-_]{4})+(?:[A-Za-z0-9\-_]{2}==|[A-Za-z0-9\-_]{3}=|[A-Za-z0-9\-_]{4})' \
-    "2_general_base64.txt"
+    "2_general_base64_urlsafe.txt"
     #case sensitive, the regex is insensitive anyway
+    
+    search "Base64 as a word used" \
+    'Base64' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'base64' \
+    "2_general_base64_word.txt" \
+    "-i"
     
     search "GPL violation? Not security related, but your customer might be happy to know such stuff" \
     'GNU GPL' \

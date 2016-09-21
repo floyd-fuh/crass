@@ -51,8 +51,8 @@ WRITE_COMMENT="true"
 WILDCARD_SHORT=20
 WILDCARD_LONG=200
 #Do all greps in background with & while only using MAX_PROCESSES subprocesses
-BACKGROUND="true"
-MAX_PROCESSES=8
+BACKGROUND="false"
+MAX_PROCESSES=2 #if you specify the number of cpu cores you have, it should roughly use 100% CPU
 
 #In my opinion I would always leave all the options below here on true,
 #because I did find strange android code in iphone apps and vice versa. I would only
@@ -170,12 +170,13 @@ function search()
         if [ "$BACKGROUND" = "true" ]; then
             #make sure we don't fork-bomb, so run at max $MAX_PROCESSES at once
             while true ; do
-                jobcnt=$(jobs -pr)
-                if [ ${#jobcnt[@]} -lt $MAX_PROCESSES ] ; then
+                jobcnt=$(jobs -p|wc -l)
+                #echo "jobcnt: $jobcnt"
+                if [ $jobcnt -lt $MAX_PROCESSES ] ; then
                     actual_search "$@" &
                     break
                 else
-                    sleep 1
+                    sleep 0.25
                 fi
             done
         else
@@ -194,7 +195,7 @@ function actual_search()
     OUTFILE="$5"
     ARGS_FOR_GREP="$6" #usually just -i for case insensitive or empty, very rare we use -o for match-only part with no context info
     #echo "$COMMENT, $SEARCH_REGEX, $OUTFILE, $ARGS_FOR_GREP, $WRITE_COMMENT, $BACKGROUND, $GREP_COMMAND, $STANDARD_GREP_ARGUMENTS, $TARGET"
-    echo "Searching (processes:$MAX_PROCESSES args for grep:$ARGS_FOR_GREP) for $SEARCH_REGEX --> writing to $OUTFILE"
+    echo "Searching (args for grep:$ARGS_FOR_GREP) for $SEARCH_REGEX --> writing to $OUTFILE"
     if [ "$WRITE_COMMENT" = "true" ]; then
         echo "# Info: $COMMENT" >> "$TARGET/$OUTFILE"
         echo "# Filename $OUTFILE" >> "$TARGET/$OUTFILE"

@@ -3360,6 +3360,14 @@ if [ "$DO_GENERAL" = "true" ]; then
     
 fi
 
+
+if [ "$BACKGROUND" = "true" ]; then
+    #Let's wait until all jobs are done
+    for job in $(jobs -p)
+    do
+        wait $job
+    done
+fi
 echo ""
 echo "Done grep. Results in $TARGET."
 echo "It's optimised to be viewed with 'less -R $TARGET/*' and then you can hop from one file to the next with :n"

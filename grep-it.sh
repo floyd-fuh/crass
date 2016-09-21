@@ -107,6 +107,7 @@ DO_GENERAL="true"
 # - make sure functions calls with space before bracket will be found if the language supports it, e.g. "extract (bla)" is allowed in PHP
 # - If in doubt, prefer to make two regex and output files rather then joining regexes with |. If one produces false positives it is really annoying to search for the true positives of the other regex.
 # - If your regex matches less than 6 characters (eg. "salt"), do not make it case insensitive as this usually produces more fals positives. Rather split into several regexes (eg. one file with case-sensitive matches for "[Ss]alt", one file with case-sensitive matches for "SALT". This way we remove false positives for removesAlternativeName and such). 
+# - Run this script with DEBUG_TEST_FLAG="true" to see if everything works fine or if you made copy&paste mistakes etc.
 # - Take care with single/double quoted strings. From the bash manual:
 # 3.1.2.2 Single Quotes
 # Enclosing characters in single quotes (‘'’) preserves the literal value of each character within the quotes. A single quote may not occur between single quotes, even when preceded by a backslash.
@@ -117,7 +118,7 @@ DO_GENERAL="true"
 # - Nothing :)
 #
 # TODO longterm (aka "probably never but I know I should"):
-# - Add/improve comments everywhere
+# - Improve comments everywhere
 # - Add comments about case-sensitivity and whitespace behavior of languages and other syntax rules that might influence our regexes
 # - Duplicate a couple of regexes to ones that *only* have true positives usually (or at least a lot less false positives)
 # - Have a look at/implement&reference rules:
@@ -150,6 +151,12 @@ if [ $# -eq 2 ]
 then
   #argument without last /
   TARGET=${2%/}
+fi
+
+if [ ! -f "$GREP_COMMAND" ]
+then
+    echo "WARNING: It seems your specified grep in $GREP_COMMAND does not exist, falling back to just 'grep'"
+    GREP_COMMAND="grep"
 fi
 
 GREP_ARGUMENTS="-rP"

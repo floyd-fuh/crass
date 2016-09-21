@@ -32,7 +32,9 @@
 # - name of what we looked for
 #
 # Related work:
-# - Especially check out the tools linked on https://www.owasp.org/index.php/Static_Code_Analysis
+# - https://www.owasp.org/index.php/Static_Code_Analysis
+# - https://samate.nist.gov/index.php/Source_Code_Security_Analyzers.html
+# - https://en.wikipedia.org/wiki/List_of_tools_for_static_code_analysis
 
 ###
 #OPTIONS - please customize
@@ -59,10 +61,11 @@ MAX_PROCESSES=2 #if you specify the number of cpu cores you have, it should roug
 #change it if grep needs very long, you are greping a lot of stuff
 #or if you have any other performance issues with this script.
 DO_JAVA="true"
-DO_FLEX="true"
 DO_JSP="true"
 DO_SPRING="true"
 DO_STRUTS="true"
+
+DO_FLEX="true"
 
 DO_DOTNET="true"
 
@@ -117,7 +120,13 @@ DO_GENERAL="true"
 # - Add/improve comments everywhere
 # - Add comments about case-sensitivity and whitespace behavior of languages and other syntax rules that might influence our regexes
 # - Duplicate a couple of regexes to ones that *only* have true positives usually (or at least a lot less false positives)
-# - Have a look at rules in files starting with mod* at https://github.com/nccgroup/VCG/tree/master/VisualCodeGrepper and other projects such as the ones in the list at https://www.owasp.org/index.php/Static_Code_Analysis
+# - Have a look at/implement&reference rules:
+#  - Files starting with mod* at https://github.com/nccgroup/VCG/tree/master/VisualCodeGrepper 
+#  - http://findbugs.sourceforge.net/bugDescriptions.html
+#  - https://www.bishopfox.com/resources/downloads/
+#  - https://pmd.github.io/
+#  - https://msdn.microsoft.com/en-us/library/aa449703.aspx
+#  - http://www.splint.org/
 
 #When the following flag is enable the tool switches to testing mode and won't do the actual work
 DEBUG_TEST_FLAG="false"
@@ -126,13 +135,13 @@ DEBUG_TMP_OUTFILE_NAMES=""
 
 if [ $# -lt 1 ]
 then
-  echo "Usage: $(basename '$0') directory-to-grep-through"
+  echo "Usage: $(basename $0) directory-to-grep-through"
   exit 0
 fi
 
 if [ "$1" = "." ]
 then
-  echo "You are shooting yourself in the foot. Do not grep through . but rather cd into parent directory and mv $(basename '$0') there."
+  echo "You are shooting yourself in the foot. Do not grep through . but rather cd into parent directory and mv $(basename $0) there."
   echo "READ THE HOWTO (3 lines)"
   exit 0
 fi
@@ -244,7 +253,6 @@ function test_run()
     fi
     
 }
-
 
 #The Java stuff
 if [ "$DO_JAVA" = "true" ]; then
@@ -817,27 +825,6 @@ if [ "$DO_JAVA" = "true" ]; then
     
 fi
 
-#The FLEX Flash specific stuff
-if [ "$DO_FLEX" = "true" ]; then
-    search 'Flex Flash has Security.allowDomain that should be tightly set and for sure not to *, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=flex' \
-    'Security.allowDomain("*");' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'Security\.allowDomain' \
-    "3_flex_security_allowDomain.txt"
-    
-    search 'Flex Flash has trace to output debug info, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=flex' \
-    'trace("output:" + value);' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'trace\(' \
-    "3_flex_trace.txt"
-    
-    search 'ExactSettings to false makes cross-domain attacks possible, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=flex' \
-    'Security.exactSettings = false;' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'Security\.exactSettings' \
-    "3_flex_exactSettings.txt"
-fi
-
 #The JSP specific stuff
 if [ "$DO_JSP" = "true" ]; then
     
@@ -904,7 +891,6 @@ if [ "$DO_JSP" = "true" ]; then
     "-i"
 fi
 
-
 #The Java Spring specific stuff
 if [ "$DO_SPRING" = "true" ]; then
     
@@ -966,6 +952,26 @@ if [ "$DO_STRUTS" = "true" ]; then
     "-i"
 fi
 
+#The FLEX Flash specific stuff
+if [ "$DO_FLEX" = "true" ]; then
+    search 'Flex Flash has Security.allowDomain that should be tightly set and for sure not to *, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=flex' \
+    'Security.allowDomain("*");' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'Security\.allowDomain' \
+    "3_flex_security_allowDomain.txt"
+    
+    search 'Flex Flash has trace to output debug info, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=flex' \
+    'trace("output:" + value);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'trace\(' \
+    "3_flex_trace.txt"
+    
+    search 'ExactSettings to false makes cross-domain attacks possible, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=flex' \
+    'Security.exactSettings = false;' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'Security\.exactSettings' \
+    "3_flex_exactSettings.txt"
+fi
 
 #The .NET specific stuff
 if [ "$DO_DOTNET" = "true" ]; then
@@ -1092,6 +1098,53 @@ if [ "$DO_DOTNET" = "true" ]; then
     "SecurityPermission" \
     "3_dotnet_SecurityPermission.txt"
     
+    search "SecurityAction as specified on https://msdn.microsoft.com/en-us/library/ms182303(v=vs.80).aspx" \
+    '[EnvironmentPermissionAttribute(SecurityAction.LinkDemand, Unrestricted=true)]' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "SecurityAction" \
+    "3_dotnet_SecurityAction.txt"
+    
+    search "Unmanaged memory pointers with IntPtr/UIntPtr, see https://msdn.microsoft.com/en-us/library/ms182306(v=vs.80).aspx" \
+    'public IntPtr publicPointer1;' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "IntPtr" \
+    "3_dotnet_IntPtr.txt"
+    
+    search "SQLClient, see https://msdn.microsoft.com/en-us/library/ms182310(v=vs.80).aspx" \
+    'using System.Data.SqlClient;' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "SqlClient" \
+    "3_dotnet_SqlClient.txt"
+    
+    search "SuppressUnmanagedCodeSecurityAttribute, see https://msdn.microsoft.com/en-us/library/ms182311(v=vs.80).aspx" \
+    '[SuppressUnmanagedCodeSecurityAttribute()]' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "SuppressUnmanagedCodeSecurityAttribute" \
+    "3_dotnet_SuppressUnmanagedCodeSecurityAttribute.txt"
+    
+    search "UnmanagedCode, see https://msdn.microsoft.com/en-us/library/ms182312(v=vs.80).aspx" \
+    '[SecurityPermissionAttribute(SecurityAction.Demand, UnmanagedCode=true)]' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "UnmanagedCode" \
+    "3_dotnet_UnmanagedCode.txt"
+    
+    search "Serializable, see https://msdn.microsoft.com/en-us/library/ms182315(v=vs.80).aspx" \
+    '[Serializable]' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "Serializable" \
+    "3_dotnet_Serializable.txt"
+    
+    search "CharSet.Auto, see https://msdn.microsoft.com/en-us/library/ms182319(v=vs.80).aspx" \
+    '[DllImport("advapi32.dll", CharSet=CharSet.Auto)]' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "CharSet\.Auto" \
+    "3_dotnet_CharSet_Auto.txt"
+    
+    search "DllImport, interesting to see in general, additionally see https://msdn.microsoft.com/en-us/library/ms182319(v=vs.80).aspx" \
+    '[DllImport("advapi32.dll", CharSet=CharSet.Auto)]' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "DllImport" \
+    "3_dotnet_DllImport.txt"
     
 fi
 
@@ -1406,7 +1459,6 @@ if [ "$DO_PHP" = "true" ]; then
     "4_php_type_unsafe_comparison.txt"
 fi
 
-
 #The HTML specific stuff
 if [ "$DO_HTML" = "true" ]; then
     
@@ -1455,7 +1507,6 @@ if [ "$DO_HTML" = "true" ]; then
     "-i"
     
 fi
-
 
 #JavaScript specific stuff
 if [ "$DO_JAVASCRIPT" = "true" ]; then
@@ -1578,7 +1629,6 @@ if [ "$DO_JAVASCRIPT" = "true" ]; then
 
 fi
 
-
 if [ "$DO_MODSECURITY" = "true" ]; then
     
     echo "#Doing modsecurity"
@@ -1656,7 +1706,6 @@ if [ "$DO_MODSECURITY" = "true" ]; then
     
 fi
 
-
 #mobile device stuff
 if [ "$DO_MOBILE" = "true" ]; then
     
@@ -1698,7 +1747,6 @@ if [ "$DO_MOBILE" = "true" ]; then
     "-i"
     
 fi
-
 
 #The Android specific stuff
 if [ "$DO_ANDROID" = "true" ]; then
@@ -1918,7 +1966,6 @@ if [ "$DO_ANDROID" = "true" ]; then
     
 fi
 
-
 #The iOS specific stuff
 if [ "$DO_IOS" = "true" ]; then
     
@@ -2080,394 +2127,6 @@ if [ "$DO_IOS" = "true" ]; then
     'NSAllowsArbitraryLoads' \
     "2_ios_NSAllowsArbitraryLoads.txt"
 
-fi
-
-
-#The C and C-derived languages specific stuff
-if [ "$DO_C" = "true" ]; then
-    
-    echo "#Doing C and derived languages"
-    
-    search "malloc. Rather rare bug, but see issues CVE-2010-0041 and CVE-2010-0042. Uninitialized memory access issues? Could also happen in java/android native code. Also developers should check return codes." \
-    'malloc(' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'malloc\(' \
-    "4_c_malloc.txt"
-    
-    search "realloc. Rather rare bug, but see issues CVE-2010-0041 and CVE-2010-0042. Uninitialized memory access issues? Could also happen in java/android native code. Also developers should check return codes." \
-    'realloc(' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'realloc\(' \
-    "4_c_realloc.txt"
-    
-    search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
-    'memcpy(' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'memcpy\(' \
-    "2_c_insecure_c_functions_memcpy.txt"
-    
-    search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
-    'memset(' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'memset\(' \
-    "2_c_insecure_c_functions_memset.txt"
-    
-    search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
-    'strncat(' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'strn?cat\(' \
-    "2_c_insecure_c_functions_strcat_strncat.txt"
-    
-    search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
-    'strncpy(' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'strn?cpy\(' \
-    "2_c_insecure_c_functions_strcpy_strncpy.txt"
-    
-    search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
-    'snprintf(' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'sn?printf\(' \
-    "2_c_insecure_c_functions_sprintf_snprintf.txt"
-    
-    search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
-    'fnprintf(' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'fn?printf\(' \
-    "2_c_insecure_c_functions_fprintf_fnprintf.txt"
-    
-    search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets. Additionally the format string should never be simple %s but rather %9s or similar to limit size that is read." \
-    'fscanf(' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'f?scanf\(' \
-    "2_c_insecure_c_functions_fscanf_scanf.txt"
-    
-    search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
-    'gets(' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'gets\(' \
-    "2_c_insecure_c_functions_gets.txt"
-    
-fi
-
-if [ "$DO_MALWARE_DETECTION" = "true" ]; then
-    
-    echo "#Doing malware detection"
-    
-    search "Viagra search" \
-    'viagra' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'viagra' \
-    "4_malware_viagra.txt" \
-    "-i"
-    
-    search "Potenzmittel is the German word mostly used for viagra" \
-    'potenzmittel' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'potenzmittel' \
-    "4_malware_potenzmittel.txt" \
-    "-i"
-    
-    search "Pharmacy" \
-    'pharmacy' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'pharmacy' \
-    "4_malware_pharmacy.txt" \
-    "-i"
-    
-    search "Drug" \
-    'drug' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'drug' \
-    "4_malware_drug.txt" \
-    "-i"
-fi
-
-#The crypto and credentials specific stuff (language agnostic)
-if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
-    
-    echo "#Doing crypto and credentials"
-    
-    search "Crypt (the method itself) can be dangerous, also matches any calls to decrypt(, encrypt( or whatevercrypt(, which is desired" \
-    'crypt(' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'crypt\(' \
-    "3_cryptocred_crypt_call.txt" \
-    "-i"
-    
-    search "Rot32 is really really bad obfuscation and has nothing to do with crypto." \
-    'ROT32' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'ROT32' \
-    "3_cryptocred_ciphers_rot32.txt" \
-    "-i"
-    
-    search "RC2 cipher. Security depends heavily on usage and what is secured." \
-    'RC2' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'RC2' \
-    "3_cryptocred_ciphers_rc2.txt" \
-    "-i"
-    
-    search "RC4 cipher. Security depends heavily on usage and what is secured." \
-    'RC4' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'RC4' \
-    "3_cryptocred_ciphers_rc4.txt"
-    
-    search "CRC32 is a checksum algorithm. Security depends heavily on usage and what is secured." \
-    'CRC32' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'CRC32' \
-    "3_cryptocred_ciphers_crc32.txt" \
-    "-i"
-    
-    search "DES cipher. Security depends heavily on usage and what is secured." \
-    'DES' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'DES' \
-    "3_cryptocred_ciphers_des.txt"
-    
-    search "MD2. Security depends heavily on usage and what is secured." \
-    'MD2' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'MD2' \
-    "3_cryptocred_ciphers_md2.txt"
-    
-    search "MD5. Security depends heavily on usage and what is secured." \
-    'MD5' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'MD5' \
-    "3_cryptocred_ciphers_md5.txt"
-    
-    search "SHA1. Security depends heavily on usage and what is secured." \
-    'SHA1' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'SHA-?1' \
-    "3_cryptocred_ciphers_sha1_uppercase.txt"
-    
-    search "SHA1. Security depends heavily on usage and what is secured." \
-    'sha1' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'sha-?1' \
-    "3_cryptocred_ciphers_sha1_lowercase.txt"
-    
-    search "SHA256. Security depends heavily on usage and what is secured." \
-    'SHA256' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'SHA-?256' \
-    "3_cryptocred_ciphers_sha256.txt" \
-    "-i"
-    
-    search "SHA256. Security depends heavily on usage and what is secured." \
-    'SHA512' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'SHA-?512' \
-    "3_cryptocred_ciphers_sha512.txt" \
-    "-i"
-    
-    search "NTLM. Security depends heavily on usage and what is secured." \
-    'NTLM' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'NTLM' \
-    "3_cryptocred_ciphers_ntlm.txt"
-    
-    search "Kerberos. Security depends heavily on usage and what is secured." \
-    'Kerberos' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'kerberos' \
-    "3_cryptocred_ciphers_kerberos.txt" \
-    "-i"
-    
-    #take care with the next regex, ! has a special meaning in double quoted strings but not in single quoted
-    search "Hash" \
-    'hash_value' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'hash(?!(table|map|set|code))' \
-    "5_cryptocred_hash.txt" \
-    "-i"
-    
-    search 'Find *nix passwd or shadow files.' \
-    '_xcsbuildagent:*:239:239:Xcode Server Build Agent:/var/empty:/usr/bin/false' \
-    '/Users/eh2pasz/workspace/ios/CCB/CCB/Classes/CBSaver.h:23:46: note: passing argument to parameter "name" here^M+ (NSString *)loadStringWithName:(NSString *)name; 1b:ee:24:46:0c:17:' \
-    "[^:]{3,$WILDCARD_SHORT}:[^:]{1,$WILDCARD_LONG}:\d{0,$WILDCARD_SHORT}:\d{0,$WILDCARD_SHORT}:[^:]{0,$WILDCARD_LONG}:[^:]{0,$WILDCARD_LONG}:[^:]*$" \
-    "1_cryptocred_passwd_or_shadow_files.txt" \
-    "-i"
-    
-    search "Encryption key and variants of it" \
-    'encrypt the key' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "encrypt.{0,$WILDCARD_SHORT}key" \
-    "2_cryptocred_encryption_key.txt" \
-    "-i"
-    
-    search "Narrow search for certificate and keys specifics of base64 encoded format" \
-    'BEGIN CERTIFICATE' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'BEGIN CERTIFICATE' \
-    "2_cryptocred_certificates_and_keys_narrow_begin-certificate.txt"
-    
-    search "Narrow search for certificate and keys specifics of base64 encoded format" \
-    'PRIVATE KEY' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'PRIVATE KEY' \
-    "1_cryptocred_certificates_and_keys_narrow_private-key.txt"
-    
-    search "Narrow search for certificate and keys specifics of base64 encoded format" \
-    'PUBLIC KEY' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'PUBLIC KEY' \
-    "2_cryptocred_certificates_and_keys_narrow_public-key.txt"
-    
-    search "Wide search for certificate and keys specifics of base64 encoded format" \
-    'begin certificate' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "BEGIN.{0,$WILDCARD_SHORT}CERTIFICATE" \
-    "4_cryptocred_certificates_and_keys_wide_begin-certificate.txt" \
-    "-i"
-    
-    search "Wide search for certificate and keys specifics of base64 encoded format" \
-    'private key' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "PRIVATE.{0,$WILDCARD_SHORT}KEY" \
-    "4_cryptocred_certificates_and_keys_wide_private-key.txt" \
-    "-i"
-    
-    search "Wide search for certificate and keys specifics of base64 encoded format" \
-    'public key' \
-    'public String getBlaKey' \
-    "PUBLIC.{0,$WILDCARD_SHORT}KEY" \
-    "4_cryptocred_certificates_and_keys_wide_public-key.txt" \
-    "-i"
-    
-    search "Salt for a hashing algorithm?" \
-    'Salt or salt' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "[Ss]alt" \
-    "5_cryptocred_salt1.txt"
-    
-    search "Salt for a hashing algorithm?" \
-    'SALT' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "SALT" \
-    "5_cryptocred_salt2.txt"
-    
-    search "Default password" \
-    'default-password' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'default.?password' \
-    "2_cryptocred_default_password.txt" \
-    "-i"
-    
-    search "Password and variants of it" \
-    'pass-word or passwd' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'pass.?wo?r?d' \
-    "3_cryptocred_password.txt" \
-    "-i"
-    
-    search "PWD abbrevation for password" \
-    'PWD' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'PWD' \
-    "4_cryptocred_pwd_uppercase.txt"
-    
-    search "pwd abbrevation for password" \
-    'pwd' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'pwd' \
-    "4_cryptocred_pwd_lowercase.txt"
-    
-    search "Pwd abbrevation for password" \
-    'Pwd' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'Pwd' \
-    "4_cryptocred_pwd_capitalcase.txt"
-    
-    search "Credentials. Included everything 'creden' because some programers write credencials instead of credentials and such things." \
-    'credentials' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'creden' \
-    "3_cryptocred_credentials.txt" \
-    "-i"
-    
-    search "Passcode and variants of it" \
-    'passcode' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "pass.?code" \
-    "3_cryptocred_passcode.txt" \
-    "-i"
-    
-    search "Passphrase and variants of it" \
-    'passphrase' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "pass.?phrase" \
-    "3_cryptocred_passphrase.txt" \
-    "-i"
-    
-    search "Secret and variants of it" \
-    'secret' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "se?3?cre?3?t" \
-    "3_cryptocred_secret.txt" \
-    "-i"
-    
-    search "PIN code and variants of it" \
-    'pin code' \
-    'mapping between error codes, pin.hashCode' \
-    "pin.{0,$WILDCARD_SHORT}code" \
-    "2_cryptocred_pin_code.txt" \
-    "-i"
-    
-    search "Proxy-Authorization" \
-    'ProxyAuthorisation' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'Proxy.?Authoris?z?ation' \
-    "4_cryptocred_proxy-authorization.txt" \
-    "-i"
-    
-    search "Authorization" \
-    'Authorisation' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'Authori[sz]ation' \
-    "4_cryptocred_authorization.txt" \
-    "-i"
-    
-    search "Authentication" \
-    'Authentication' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'Authentication' \
-    "4_cryptocred_authentication.txt" \
-    "-i"
-    
-    search "SSL usage with requireSSL" \
-    'requireSSL' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "require.{0,$WILDCARD_SHORT}SSL" \
-    "3_cryptocred_ssl_usage_require-ssl.txt" \
-    "-i"
-    
-    search "SSL usage with useSSL" \
-    'use ssl' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "use.{0,$WILDCARD_SHORT}SSL" \
-    "3_cryptocred_ssl_usage_use-ssl.txt" \
-    "-i"
-    
-    search "TLS usage with require TLS" \
-    'require TLS' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "require.{0,$WILDCARD_SHORT}TLS" \
-    "3_cryptocred_tls_usage_require-tls.txt" \
-    "-i"
-    
-    search "TLS usage with use TLS" \
-    'use TLS' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "use.{0,$WILDCARD_SHORT}TLS" \
-    "3_cryptocred_tls_usage_use-tls.txt" \
-    "-i"
-    
 fi
 
 #Python language specific stuff
@@ -2691,13 +2350,418 @@ if [ "$DO_RUBY" = "true" ]; then
     "verify_authenticity_token" \
     "2_ruby_verify_authenticity_token.txt"
 
+    search "Regex function that allows anything after a newline, \\A and \\z has to be used in regex to prevent this, see https://github.com/presidentbeef/brakeman/blob/master/lib/brakeman/checks/check_validation_regex.rb" \
+    'validates_format_of' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "validates_format_of" \
+    "2_ruby_validates_format_of.txt"
+    
+fi
+
+#The C and C-derived languages specific stuff
+if [ "$DO_C" = "true" ]; then
+    
+    echo "#Doing C and derived languages"
+    
+    search "malloc. Rather rare bug, but see issues CVE-2010-0041 and CVE-2010-0042. Uninitialized memory access issues? Could also happen in java/android native code. Also developers should check return codes." \
+    'malloc(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'malloc\(' \
+    "4_c_malloc.txt"
+    
+    search "realloc. Rather rare bug, but see issues CVE-2010-0041 and CVE-2010-0042. Uninitialized memory access issues? Could also happen in java/android native code. Also developers should check return codes." \
+    'realloc(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'realloc\(' \
+    "4_c_realloc.txt"
+    
+    search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
+    'memcpy(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'memcpy\(' \
+    "2_c_insecure_c_functions_memcpy.txt"
+    
+    search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
+    'memset(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'memset\(' \
+    "2_c_insecure_c_functions_memset.txt"
+    
+    search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
+    'strncat(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'strn?cat\(' \
+    "2_c_insecure_c_functions_strcat_strncat.txt"
+    
+    search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
+    'strncpy(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'strn?cpy\(' \
+    "2_c_insecure_c_functions_strcpy_strncpy.txt"
+    
+    search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
+    'snprintf(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'sn?printf\(' \
+    "2_c_insecure_c_functions_sprintf_snprintf.txt"
+    
+    search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
+    'fnprintf(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'fn?printf\(' \
+    "2_c_insecure_c_functions_fprintf_fnprintf.txt"
+    
+    search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets. Additionally the format string should never be simple %s but rather %9s or similar to limit size that is read." \
+    'fscanf(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'f?scanf\(' \
+    "2_c_insecure_c_functions_fscanf_scanf.txt"
+    
+    search "Buffer overflows and format string vulnerable methods: memcpy, memset, strcat --> strlcat, strcpy --> strlcpy, strncat --> strlcat, strncpy --> strlcpy, sprintf --> snprintf, vsprintf --> vsnprintf, gets --> fgets" \
+    'gets(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'gets\(' \
+    "2_c_insecure_c_functions_gets.txt"
+    
+    search "Random is not a secure random number generator" \
+    'random(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'random\(' \
+    "2_c_random.txt"
+    
+fi
+
+if [ "$DO_MALWARE_DETECTION" = "true" ]; then
+    
+    echo "#Doing malware detection"
+    
+    search "Viagra search" \
+    'viagra' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'viagra' \
+    "4_malware_viagra.txt" \
+    "-i"
+    
+    search "Potenzmittel is the German word mostly used for viagra" \
+    'potenzmittel' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'potenzmittel' \
+    "4_malware_potenzmittel.txt" \
+    "-i"
+    
+    search "Pharmacy" \
+    'pharmacy' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'pharmacy' \
+    "4_malware_pharmacy.txt" \
+    "-i"
+    
+    search "Drug" \
+    'drug' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'drug' \
+    "4_malware_drug.txt" \
+    "-i"
+fi
+
+#The crypto and credentials specific stuff (language agnostic)
+if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
+    
+    echo "#Doing crypto and credentials"
+    
+    search "Crypt (the method itself) can be dangerous, also matches any calls to decrypt(, encrypt( or whatevercrypt(, which is desired" \
+    'crypt(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'crypt\(' \
+    "3_cryptocred_crypt_call.txt" \
+    "-i"
+    
+    search "Rot32 is really really bad obfuscation and has nothing to do with crypto." \
+    'ROT32' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'ROT32' \
+    "3_cryptocred_ciphers_rot32.txt" \
+    "-i"
+    
+    search "RC2 cipher. Security depends heavily on usage and what is secured." \
+    'RC2' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'RC2' \
+    "3_cryptocred_ciphers_rc2.txt" \
+    "-i"
+    
+    search "RC4 cipher. Security depends heavily on usage and what is secured." \
+    'RC4' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'RC4' \
+    "3_cryptocred_ciphers_rc4.txt"
+    
+    search "CRC32 is a checksum algorithm. Security depends heavily on usage and what is secured." \
+    'CRC32' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'CRC32' \
+    "3_cryptocred_ciphers_crc32.txt" \
+    "-i"
+    
+    search "DES cipher. Security depends heavily on usage and what is secured." \
+    'DES' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'DES' \
+    "3_cryptocred_ciphers_des.txt"
+    
+    search "MD2. Security depends heavily on usage and what is secured." \
+    'MD2' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'MD2' \
+    "3_cryptocred_ciphers_md2.txt"
+    
+    search "MD5. Security depends heavily on usage and what is secured." \
+    'MD5' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'MD5' \
+    "3_cryptocred_ciphers_md5.txt"
+    
+    search "SHA1. Security depends heavily on usage and what is secured." \
+    'SHA1' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'SHA-?1' \
+    "3_cryptocred_ciphers_sha1_uppercase.txt"
+    
+    search "SHA1. Security depends heavily on usage and what is secured." \
+    'sha1' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'sha-?1' \
+    "3_cryptocred_ciphers_sha1_lowercase.txt"
+    
+    search "SHA256. Security depends heavily on usage and what is secured." \
+    'SHA256' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'SHA-?256' \
+    "3_cryptocred_ciphers_sha256.txt" \
+    "-i"
+    
+    search "SHA256. Security depends heavily on usage and what is secured." \
+    'SHA512' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'SHA-?512' \
+    "3_cryptocred_ciphers_sha512.txt" \
+    "-i"
+    
+    search "NTLM. Security depends heavily on usage and what is secured." \
+    'NTLM' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'NTLM' \
+    "3_cryptocred_ciphers_ntlm.txt"
+    
+    search "Kerberos. Security depends heavily on usage and what is secured." \
+    'Kerberos' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'kerberos' \
+    "3_cryptocred_ciphers_kerberos.txt" \
+    "-i"
+    
+    #take care with the next regex, ! has a special meaning in double quoted strings but not in single quoted
+    search "Hash" \
+    'hash_value' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'hash(?!(table|map|set|code))' \
+    "5_cryptocred_hash.txt" \
+    "-i"
+    
+    search 'Find *nix passwd or shadow files.' \
+    '_xcsbuildagent:*:239:239:Xcode Server Build Agent:/var/empty:/usr/bin/false' \
+    '/Users/eh2pasz/workspace/ios/CCB/CCB/Classes/CBSaver.h:23:46: note: passing argument to parameter "name" here^M+ (NSString *)loadStringWithName:(NSString *)name; 1b:ee:24:46:0c:17:' \
+    "[^:]{3,$WILDCARD_SHORT}:[^:]{1,$WILDCARD_LONG}:\d{0,$WILDCARD_SHORT}:\d{0,$WILDCARD_SHORT}:[^:]{0,$WILDCARD_LONG}:[^:]{0,$WILDCARD_LONG}:[^:]*$" \
+    "1_cryptocred_passwd_or_shadow_files.txt" \
+    "-i"
+    
+    search "Encryption key and variants of it" \
+    'encrypt the key' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "encrypt.{0,$WILDCARD_SHORT}key" \
+    "2_cryptocred_encryption_key.txt" \
+    "-i"
+    
+    search "Narrow search for certificate and keys specifics of base64 encoded format" \
+    'BEGIN CERTIFICATE' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'BEGIN CERTIFICATE' \
+    "2_cryptocred_certificates_and_keys_narrow_begin-certificate.txt"
+    
+    search "Narrow search for certificate and keys specifics of base64 encoded format" \
+    'PRIVATE KEY' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'PRIVATE KEY' \
+    "1_cryptocred_certificates_and_keys_narrow_private-key.txt"
+    
+    search "Narrow search for certificate and keys specifics of base64 encoded format" \
+    'PUBLIC KEY' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'PUBLIC KEY' \
+    "2_cryptocred_certificates_and_keys_narrow_public-key.txt"
+    
+    search "Wide search for certificate and keys specifics of base64 encoded format" \
+    'begin certificate' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "BEGIN.{0,$WILDCARD_SHORT}CERTIFICATE" \
+    "4_cryptocred_certificates_and_keys_wide_begin-certificate.txt" \
+    "-i"
+    
+    search "Wide search for certificate and keys specifics of base64 encoded format" \
+    'private key' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "PRIVATE.{0,$WILDCARD_SHORT}KEY" \
+    "4_cryptocred_certificates_and_keys_wide_private-key.txt" \
+    "-i"
+    
+    search "Wide search for certificate and keys specifics of base64 encoded format" \
+    'public key' \
+    'public String getBlaKey' \
+    "PUBLIC.{0,$WILDCARD_SHORT}KEY" \
+    "4_cryptocred_certificates_and_keys_wide_public-key.txt" \
+    "-i"
+    
+    search "Salt for a hashing algorithm?" \
+    'Salt or salt' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "[Ss]alt" \
+    "5_cryptocred_salt1.txt"
+    
+    search "Salt for a hashing algorithm?" \
+    'SALT' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "SALT" \
+    "5_cryptocred_salt2.txt"
+    
+    search "Hexdigest" \
+    'hex-digest' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "hex.?digest" \
+    "5_cryptocred_hexdigest.txt" \
+    "-i"
+    
+    search "Default password" \
+    'default-password' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'default.?password' \
+    "2_cryptocred_default_password.txt" \
+    "-i"
+    
+    search "Password and variants of it" \
+    'pass-word or passwd' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'pass.?wo?r?d' \
+    "3_cryptocred_password.txt" \
+    "-i"
+    
+    search "PWD abbrevation for password" \
+    'PWD' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'PWD' \
+    "4_cryptocred_pwd_uppercase.txt"
+    
+    search "pwd abbrevation for password" \
+    'pwd' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'pwd' \
+    "4_cryptocred_pwd_lowercase.txt"
+    
+    search "Pwd abbrevation for password" \
+    'Pwd' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'Pwd' \
+    "4_cryptocred_pwd_capitalcase.txt"
+    
+    search "Credentials. Included everything 'creden' because some programers write credencials instead of credentials and such things." \
+    'credentials' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'creden' \
+    "3_cryptocred_credentials.txt" \
+    "-i"
+    
+    search "Passcode and variants of it" \
+    'passcode' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "pass.?code" \
+    "3_cryptocred_passcode.txt" \
+    "-i"
+    
+    search "Passphrase and variants of it" \
+    'passphrase' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "pass.?phrase" \
+    "3_cryptocred_passphrase.txt" \
+    "-i"
+    
+    search "Secret and variants of it" \
+    'secret' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "se?3?cre?3?t" \
+    "3_cryptocred_secret.txt" \
+    "-i"
+    
+    search "PIN code and variants of it" \
+    'pin code' \
+    'mapping between error codes, pin.hashCode' \
+    "pin.{0,$WILDCARD_SHORT}code" \
+    "2_cryptocred_pin_code.txt" \
+    "-i"
+    
+    search "Proxy-Authorization" \
+    'ProxyAuthorisation' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'Proxy.?Authoris?z?ation' \
+    "4_cryptocred_proxy-authorization.txt" \
+    "-i"
+    
+    search "Authorization" \
+    'Authorisation' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'Authori[sz]ation' \
+    "4_cryptocred_authorization.txt" \
+    "-i"
+    
+    search "Authentication" \
+    'Authentication' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'Authentication' \
+    "4_cryptocred_authentication.txt" \
+    "-i"
+    
+    search "SSL usage with requireSSL" \
+    'requireSSL' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "require.{0,$WILDCARD_SHORT}SSL" \
+    "3_cryptocred_ssl_usage_require-ssl.txt" \
+    "-i"
+    
+    search "SSL usage with useSSL" \
+    'use ssl' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "use.{0,$WILDCARD_SHORT}SSL" \
+    "3_cryptocred_ssl_usage_use-ssl.txt" \
+    "-i"
+    
+    search "TLS usage with require TLS" \
+    'require TLS' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "require.{0,$WILDCARD_SHORT}TLS" \
+    "3_cryptocred_tls_usage_require-tls.txt" \
+    "-i"
+    
+    search "TLS usage with use TLS" \
+    'use TLS' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "use.{0,$WILDCARD_SHORT}TLS" \
+    "3_cryptocred_tls_usage_use-tls.txt" \
+    "-i"
+    
 fi
 
 #Very general stuff (language agnostic)
 if [ "$DO_GENERAL" = "true" ]; then
     
     echo "#Doing general"
-    
     
     search "A generic templating pattern that is used in HTML generation of Java (JSP), Ruby and client-side JavaScript libraries." \
     'In Java <%=bean.getName()%> or in ruby <%= parameter[:value] %>' \
@@ -2732,10 +2796,16 @@ if [ "$DO_GENERAL" = "true" ]; then
     "4_general_deny.txt"
     
     search "Exec mostly means executing on OS." \
-    'exec (' \
+    'runTime.exec("echo "+unsanitized_input);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "exec\s{0,$WILDCARD_SHORT}\(" \
-    "3_general_exec.txt"
+    "3_general_exec_narrow.txt"
+    
+    search "Exec mostly means executing on OS." \
+    'runTime.exec("echo "+unsanitized_input);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "exec" \
+    "4_general_exec_wide.txt"
     
     search "Eval mostly means evaluating commands." \
     'eval (' \
@@ -2750,10 +2820,17 @@ if [ "$DO_GENERAL" = "true" ]; then
     "4_general_eval_wide.txt"
     
     search "Syscall: Command execution?" \
+    'syscall(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "sys.?call\s{0,$WILDCARD_SHORT}\(" \
+    "3_general_syscall_narrow.txt" \
+    "-i"
+    
+    search "Syscall: Command execution?" \
     'syscall' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "sys.?call" \
-    "4_general_syscall.txt" \
+    "4_general_syscall_wide.txt" \
     "-i"
     
     search "system: Command execution?" \
@@ -2810,6 +2887,27 @@ if [ "$DO_GENERAL" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "spawn" \
     "4_general_spawn_wide.txt" \
+    "-i"
+    
+    search "chgrp: Change group command" \
+    'chgrp' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "chgrp" \
+    "4_general_chgrp.txt" \
+    "-i"
+    
+    search "chown: Change owner command" \
+    'chown' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "chown" \
+    "4_general_chown.txt" \
+    "-i"
+    
+    search "chmod: Change mode (permissions) command" \
+    'chmod' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "chmod" \
+    "4_general_chmod.txt" \
     "-i"
     
     search "Session timeouts should be reasonable short for things like sessions for web logins but can also lead to denial of service conditions in other cases." \
@@ -3220,17 +3318,17 @@ if [ "$DO_GENERAL" = "true" ]; then
     "3_general_swear_crap.txt" \
     "-i"
     
+    #IP-Adresses
+    #\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.
+    #  (25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.
+    #  (25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.
+    #  (25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b
     search "IP addresses" \
     '192.168.0.1 10.0.0.1' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)' \
     "3_general_ip-addresses.txt" \
     "-i"
-    #IP-Adresses
-    #\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.
-    #  (25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.
-    #  (25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.
-    #  (25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b
 
     search "Referer is only used for the HTTP Referer usually, it can be specified by the attacker" \
     'referer' \
@@ -3251,13 +3349,6 @@ if [ "$DO_GENERAL" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\(&\(.{0,$WILDCARD_SHORT}=" \
     "3_general_ldap_generic.txt" \
-    "-i"
-    
-    search "Generic exec call often used for OS command execution" \
-    'runTime.exec("echo "+unsanitized_input);' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "exec\(" \
-    "3_general_exec_generic.txt" \
     "-i"
     
     search "Generic sleep call, if server side this could block thread/process and therefore enable to easily do Denial of Service attacks" \

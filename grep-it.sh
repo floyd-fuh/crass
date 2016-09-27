@@ -17,6 +17,7 @@
 # - GNU grep. If you have OSX, install from ports or so. Reason: we need regex match -P
 # - rm command. Reason: if grep doesn't match anything we remove the corresponding output file
 # - mkdir command. Reason: we need to make the $TARGET directory
+# - jobs, wait and wc command, if you want to run multiple grep in the background.
 #
 # Howto:
 # - Customize the "OPTIONS" section below to your needs
@@ -39,9 +40,17 @@
 ###
 #OPTIONS - please customize
 ###
-GREP_COMMAND="/opt/local/bin/grep" #or just "grep"
+
+#Which grep to use:
+#OSX:
+GREP_COMMAND="/opt/local/bin/grep"
+#Most other *nix
+#GREP_COMMAND="grep"
+#Do not remove -rP if you don't know what you are doing, otherwise you probably break this script
+GREP_ARGUMENTS="-n -A 1 -B 3 -rP"
+#my tests with a tool called ripgrep showed there is no real benefit in using it for this script
+
 RM_COMMAND="rm"
-ADDITIONAL_GREP_ARGUMENTS="-n -A 1 -B 3"
 #Open the colored outputs with "less -R" or cat, otherwise remove --color=always
 COLOR_ARGUMENTS="--color=always"
 #Output folder if not otherwise specified on the command line
@@ -104,6 +113,7 @@ DO_GENERAL="true"
 # Conventions if you add new regexes:
 # - First think about which sections you want to put a new rule
 # - Don't use * in regex but use {0,X} instead. See WILDCARD_ variables for configurable values of X.
+# - When using character classes in regexes such as [A-Za-z] and you have to include the dash, make it the last element: [A-Za-z-]
 # - make sure functions calls with space before bracket will be found if the language supports it, e.g. "extract (bla)" is allowed in PHP
 # - If in doubt, prefer to make two regex and output files rather then joining regexes with |. If one produces false positives it is really annoying to search for the true positives of the other regex.
 # - If your regex matches less than 6 characters (eg. "salt"), do not make it case insensitive as this usually produces more fals positives. Rather split into several regexes (eg. one file with case-sensitive matches for "[Ss]alt", one file with case-sensitive matches for "SALT". This way we remove false positives for removesAlternativeName and such). 
@@ -159,8 +169,7 @@ then
     GREP_COMMAND="grep"
 fi
 
-GREP_ARGUMENTS="-rP"
-STANDARD_GREP_ARGUMENTS="$ADDITIONAL_GREP_ARGUMENTS $GREP_ARGUMENTS $COLOR_ARGUMENTS"
+STANDARD_GREP_ARGUMENTS="$GREP_ARGUMENTS $COLOR_ARGUMENTS"
 
 #argument without last /
 SEARCH_FOLDER=${1%/}
@@ -217,7 +226,7 @@ function actual_search()
         echo "# Filename $OUTFILE" >> "$TARGET/$OUTFILE"
         echo "# Example: $EXAMPLE" >> "$TARGET/$OUTFILE"
         echo "# False positive example: $FALSE_POSITIVES_EXAMPLE" >> "$TARGET/$OUTFILE"
-        echo "# Grep additional args: $ARGS_FOR_GREP" >> "$TARGET/$OUTFILE"
+        echo "# Grep args: $ARGS_FOR_GREP" >> "$TARGET/$OUTFILE"
         echo "# Search regex: $SEARCH_REGEX" >> "$TARGET/$OUTFILE"
     fi
     $GREP_COMMAND $ARGS_FOR_GREP $STANDARD_GREP_ARGUMENTS "$SEARCH_REGEX" "$SEARCH_FOLDER" >> "$TARGET/$OUTFILE"
@@ -241,6 +250,8 @@ function test_run()
     $GREP_COMMAND $ARGS_FOR_GREP $STANDARD_GREP_ARGUMENTS "$SEARCH_REGEX" "testing/temp_file.txt" > /dev/null
     if [ $? -ne 0 ]; then
         echo "FAIL! $EXAMPLE was not matched for regex $SEARCH_REGEX"
+        echo "Test file content:"
+        cat testing/temp_file.txt
     #else
         #echo "PASS! $SEARCH_REGEX"
     fi
@@ -1613,7 +1624,7 @@ if [ "$DO_JAVASCRIPT" = "true" ]; then
     search "The constructor for functions can be used as a replacement for eval, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=js" \
     'f = new Function("name", "return 123 + name"); ' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "new\sFunction.{0,$WILDCARD_SHORT}+" \
+    "new\sFunction.{0,$WILDCARD_SHORT}" \
     "3_js_new_function_eval.txt"
     
     search "Sensitive information in localStorage is not encrypted, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=js" \
@@ -2982,9 +2993,9 @@ if [ "$DO_GENERAL" = "true" ]; then
     
     #Take care with the following regex, @ has a special meaning in double quoted strings, but not in single quoted strings
     search "Email addresses" \
-    'example@example.com' \
+    'example-email_address-@example-domain.com' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    '\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,4}\b' \
+    '\b[A-Za-z0-9\\._%+-]+@[A-Za-z0-9\.-]+\.[A-Za-z]{2,4}\b' \
     "5_general_email.txt" \
     "-i"
      
@@ -3067,7 +3078,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     search "URIs with authentication information specified as ://username:password@example.org" \
     'http://username:password@example.com' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "://.{1,$WILDCARD_SHORT}:.{1,$WILDCARD_SHORT}\@" \
+    "://.{1,$WILDCARD_SHORT}:.{1,$WILDCARD_SHORT}@" \
     "1_general_uris_auth_info_narrow.txt" \
     "-i"
     
@@ -3075,7 +3086,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     search "URIs with authentication information specified as username:password@example.org" \
     'username:password@example.com' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    ".{1,$WILDCARD_SHORT}:.{1,$WILDCARD_SHORT}\@" \
+    ".{1,$WILDCARD_SHORT}:.{1,$WILDCARD_SHORT}@" \
     "2_general_uris_auth_info_wide.txt" \
     "-i"
     
@@ -3251,7 +3262,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     search "Base64 URL-safe encoded data (that is more than 6 bytes long). To get from URL-safe base64 to regular base64 you need .replace('-','+').replace('_','/'). This regex won't detect a base64 encoded value over several lines..." \
     'YScqKyo6LV_Dpw==' \
     '/target/ //JQLite - the following ones shouldnt be an issue anymore as we require more than 6 bytes: done echo else gen/ ////' \
-    '(?:[A-Za-z0-9\-_]{4})+(?:[A-Za-z0-9\-_]{2}==|[A-Za-z0-9\-_]{3}=|[A-Za-z0-9\-_]{4})' \
+    '(?:[A-Za-z0-9_-]{4})+(?:[A-Za-z0-9_-]{2}==|[A-Za-z0-9_-]{3}=|[A-Za-z0-9_-]{4})' \
     "2_general_base64_urlsafe.txt"
     #case sensitive, the regex is insensitive anyway
     
@@ -3347,7 +3358,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     search "Generic search for SQL injection, FROM and WHERE being SQL keywords and + meaning string concatenation" \
     'q = "SELECT * from USERS where NAME=" + user;' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "from\s.{0,$WILDCARD_LONG}\swhere\s.{0,$WILDCARD_LONG}+" \
+    "from\s.{0,$WILDCARD_LONG}\swhere\s.{0,$WILDCARD_LONG}" \
     "3_general_sqli_generic.txt" \
     "-i"
     

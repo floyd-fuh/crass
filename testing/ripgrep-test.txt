@@ -1,0 +1,14 @@
+#Tested the grep-it.sh script with ripgrep compared to gnu grep:
+#ripgrep is an alternative for grep https://github.com/BurntSushi/ripgrep that can be used instead
+#a couple regex will fail with ripgrep, most will work
+#when I last checked two failed, one with ?! (negative look around) and one with argument -o
+#Test with some disassembled and decompiled Android apps on a quad core machine:
+#gnu grep without BACKGROUND: real 5m25.681s (gnu grep on OSX on 1 core) VS real 2m7.955s (ripgrep on OSX on 4 cores)
+#gnu grep with 4 MAX_PROCESSES and BACKGROUND: real 2m18.764s (gnu grep on OSX on 4 cores) VS real 2m7.955s (ripgrep on OSX on 4 cores)
+#and that overhead of gnu grep is probably only because we have a sleep 0.25 when BACKGROUND is enabled!
+#We could lower that to 0.1 or something, but I'm not convinced it's worth the overhead
+#therefore it seems it has only little/no benefit for us
+#ripgrep command:
+GREP_COMMAND="/opt/ripgrep/target/release/rg" 
+#ripgrep arguments:
+GREP_ARGUMENTS="-uu -n -A 1 -B 3"

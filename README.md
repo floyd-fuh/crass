@@ -31,3 +31,7 @@ By now the tool is also able to analyze directories full of unknown things a bit
 Some characteristics:
 * The scripts can be run independently (it is important to keep it this way). main.sh is showing what the idea of using them all together is.
 * Tested under MAC OSX (with gnu-grep from mac ports). You should customize the defined variables on the first few line in each script.
+
+Contributions
+-------
+Are very welcome, either as issue reports or as pull requests. I know the user experience with everything except grep-it.sh is probably not that great, hope to find time to change that. What would be helpful too is if you can let me know if one of the regex in grep-it.sh was helpful for a certain purpose, so we can improve the comments. 

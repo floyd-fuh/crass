@@ -50,7 +50,6 @@ GREP_COMMAND="/opt/local/bin/grep"
 GREP_ARGUMENTS="-n -A 1 -B 3 -rP"
 #my tests with a tool called ripgrep showed there is no real benefit in using it for this script
 
-RM_COMMAND="rm"
 #Open the colored outputs with "less -R" or cat, otherwise remove --color=always
 COLOR_ARGUMENTS="--color=always"
 #Output folder if not otherwise specified on the command line
@@ -232,7 +231,7 @@ function actual_search()
     $GREP_COMMAND $ARGS_FOR_GREP $STANDARD_GREP_ARGUMENTS "$SEARCH_REGEX" "$SEARCH_FOLDER" >> "$TARGET/$OUTFILE"
     if [ $? -ne 0 ]; then
         #echo "Last grep didn't have a result, removing $OUTFILE"
-        $RM_COMMAND "$TARGET/$OUTFILE"
+        rm "$TARGET/$OUTFILE"
     fi
 }
 
@@ -1981,6 +1980,48 @@ if [ "$DO_ANDROID" = "true" ]; then
     "BackupAgent" \
     "3_android_backupAgent.txt"
     
+    search "/system is the path where a lot of binaries are stored. So whenever an Android app does something like executing a binary such as /system/xbin/which with an absolut path. Often used in root-detection mechanisms." \
+    '/system/xbin/which' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "/system" \
+    "3_android_system_path.txt"
+    
+    search "Often used in root-detection mechanisms." \
+    'Superuser.apk' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "Superuser.apk" \
+    "3_android_superuser_apk.txt" \
+    "-i"
+    
+    search "Often used in root-detection mechanisms." \
+    'eu.chainfire.supersu' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "supersu" \
+    "3_android_supersu.txt"
+    
+    search "Often used in root-detection mechanisms. geprop ro.secure on an adb shell can be used to check. If ro.secure=0, an ADB shell will run commands as the root user on the device. But if ro.secure=1, an ADB shell will run commands as an unprivileged user on the device." \
+    'ro.secure' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "ro\.secure" \
+    "3_android_ro.secure.txt"
+    
+    search "Often used in root-detection mechanisms, checks if debugger is connected." \
+    'android.os.Debug.isDebuggerConnected()' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "isDebuggerConnected" \
+    "3_android_isDebuggerConnected.txt"
+    
+    search "Probably the singlemost effective root-detection mechanism, implemented by Google itself, SafetyNet. See https://developer.android.com/training/safetynet/index.html and https://koz.io/inside-safetynet/ ." \
+    'mGoogleApiClient = new GoogleApiClient.Builder(this).addApi(SafetyNet.API)' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "SafetyNet" \
+    "2_android_SafetyNet.txt"
+    
+    search "Probably the singlemost effective root-detection mechanism, implemented by Google itself, SafetyNet. See https://developer.android.com/training/safetynet/index.html and https://koz.io/inside-safetynet/ ." \
+    'public void onResult(SafetyNetApi.AttestationResult result) {' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "AttestationResult" \
+    "2_android_AttestationResult.txt"
     
 fi
 
@@ -2600,6 +2641,12 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     "2_cryptocred_encryption_key.txt" \
     "-i"
     
+    search "Sources of entropy: /dev/random and /dev/urandom" \
+    '/dev/urandom' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "/dev/u?random" \
+    "2_cryptocred_dev_random.txt"
+    
     search "Narrow search for certificate and keys specifics of base64 encoded format" \
     'BEGIN CERTIFICATE' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -2797,7 +2844,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     search "Su binary" \
     'sudo binary' \
     'suite.api.java.rql.construct.Binary, super(name, contentType, binary' \
-    "su.{0,$WILDCARD_LONG}binary" \
+    "su.{0,$WILDCARD_SHORT}binary" \
     "2_general_su-binary.txt" \
     "-i"
     
@@ -2995,7 +3042,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     search "Email addresses" \
     'example-email_address-@example-domain.com' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    '\b[A-Za-z0-9\\._%+-]+@[A-Za-z0-9\.-]+\.[A-Za-z]{2,4}\b' \
+    '\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b' \
     "5_general_email.txt" \
     "-i"
      

@@ -65,7 +65,7 @@ BACKGROUND="false"
 MAX_PROCESSES=2 #if you specify the number of cpu cores you have, it should roughly use 100% CPU
 
 #In my opinion I would always leave all the options below here on true,
-#because I did find strange android code in iphone apps and vice versa. I would only
+#because I did find strange android code in iphone apps and even entire PHP server side code in Android apps. I would only
 #change it if grep needs very long, you are greping a lot of stuff
 #or if you have any other performance issues with this script.
 DO_JAVA="true"
@@ -640,7 +640,7 @@ if [ "$DO_JAVA" = "true" ]; then
     '\u0041\u0042' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\\u00..\\u00..' \
-    "3_java_backdoor_as_unicode.txt" \
+    "4_java_backdoor_as_unicode.txt" \
     "-i"
     
     search "CheckValidity method of X509Certificate in Java is a very confusing naming for developers new to SSL/TLS and has been used as the *only* check to see if a certificate is valid or not in the past. This method *only* checks the date-validity, see http://docs.oracle.com/javase/7/docs/api/java/security/cert/X509Certificate.html#checkValidity%28%29 : 'Checks that the certificate is currently valid. It is if the current date and time are within the validity period given in the certificate.'" \
@@ -976,6 +976,24 @@ if [ "$DO_FLEX" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'Security\.allowDomain' \
     "3_flex_security_allowDomain.txt"
+    
+    search 'Flex Flash has Security.allowInsecureDomain that is here for backward compatibility to allowDomain, it should be tightly set and for sure not to *, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=flex' \
+    'Security.allowInsecureDomain("*");' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'Security\.allowInsecureDomain' \
+    "3_flex_security_allowInsecureDomain.txt"
+    
+    search 'Flex Flash can load arbitrary policy files via loadPolicyFile' \
+    'loadPolicyFile("http://example.com/crossdomain.xml");' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'loadPolicyFile' \
+    "3_flex_loadPolicyFile.txt"
+    
+    search 'Flex Flash permitted-cross-domain-policies' \
+    'permitted-cross-domain-policies' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'permitted-cross-domain-policies' \
+    "3_flex_permitted-cross-domain-policies.txt"
     
     search 'Flex Flash has trace to output debug info, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=flex' \
     'trace("output:" + value);' \
@@ -1523,6 +1541,20 @@ if [ "$DO_HTML" = "true" ]; then
     "3_angularjs_sceprovider_check_all_instances_of_unsafe_html_2.txt" \
     "-i"
     
+    search 'application/octet-stream is subject to content sniffing in some browsers.' \
+    'application/octet-stream' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'application/octet-stream' \
+    "3_html_application_octet-stream.txt" \
+    "-i"
+    
+    search 'text/plain is subject to content sniffing in some browsers.' \
+    'text/plain' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'text/plain' \
+    "3_html_text_plain.txt" \
+    "-i"
+    
 fi
 
 #JavaScript specific stuff
@@ -1614,12 +1646,6 @@ if [ "$DO_JAVASCRIPT" = "true" ]; then
     "\.postMessage\(" \
     "4_js_postMessage.txt"
     
-    search "The debugger statement is basically a breakpoint, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=js" \
-    'debugger;' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "debugger;" \
-    "4_js_debugger.txt"
-    
     search "The constructor for functions can be used as a replacement for eval, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=js" \
     'f = new Function("name", "return 123 + name"); ' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -1643,6 +1669,42 @@ if [ "$DO_JAVASCRIPT" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "createElement.{0,$WILDCARD_SHORT}script" \
     "3_js_createElement_script.txt"
+    
+    search "RFC 4627 includes a parser regex example http://www.ietf.org/rfc/rfc4627.txt and it is insecure ass explained in the 'the tangled web' book, as it allows incrementing and decrementing of certain variables." \
+    'var my_JSON_object = !(/[^,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]/.test( var my_JSON_object = !(/[^,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]/.test(eval(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "Eaeflnr-u" \
+    "3_js_insecure_JSON_parser.txt"
+    
+    search "Setting the document.domain influences the same origin policy." \
+    'document.domain = example.com' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "document.domain\s=" \
+    "3_js_document_domain.txt"
+    
+    search "Frame communication in browsers with postMessage. PostMessage is one of the better ways of doing this." \
+    'parent.postMessage("user=bob", "https://example.com");' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "postMessage\(" \
+    "3_js_postMessage.txt"
+    
+    search "Frame communication in browsers with postMessage and the corresponding addEventListener." \
+    'addEventListener("message", a_function, false);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "addEventListener.{0,$WILDCARD_SHORT}message" \
+    "3_js_addEventListener_message.txt"
+    
+    search "AllowScriptAccess allows or disallows ExternalInterface.call from an Applet to JavaScript." \
+    'AllowScriptAccess' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "AllowScriptAccess" \
+    "3_js_AllowScriptAccess.txt"
+    
+    search "The mayscript attribute of <applet>, <embed> and <object> should be present, but they can be circumvented by DOMService if present" \
+    'mayscript' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "mayscript" \
+    "3_js_mayscript.txt"
 
 fi
 
@@ -1869,11 +1931,23 @@ if [ "$DO_ANDROID" = "true" ]; then
     '\.getCodeCache' \
     "3_android_access_getCodeCache.txt"
     
-    search "Get external cache directory on Android, see https://developer.android.com/reference/android/content/Context.html" \
-    '.getExternalCache' \
+    search "Get external cache directory on Android has no security as it is on the SD card and the file system usually doesn't support permissions, see https://developer.android.com/reference/android/content/Context.html" \
+    '.getExternalCacheDirs' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.getExternalCache' \
     "3_android_access_getExternalCache.txt"
+    
+    search "Get external file directory on Android has no security as it is on the SD card and the file system usually doesn't support permissions, see https://developer.android.com/reference/android/content/Context.html" \
+    '.getExternalFilesDir' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.getExternalFile' \
+    "3_android_access_getExternalFile.txt"
+    
+    search "Get external media directory on Android has no security as it is on the SD card and the file system usually doesn't support permissions, see https://developer.android.com/reference/android/content/Context.html" \
+    '.getExternalMedia' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.getExternalMedia' \
+    "3_android_access_getExternalMedia.txt"
     
     search "Do a query on Android" \
     '.query(' \
@@ -1932,6 +2006,18 @@ if [ "$DO_ANDROID" = "true" ]; then
     '\.getData\(' \
     "3_android_intents_getData.txt"
     
+    search "Java URI parsing. Often used in Android for an intent, where it is important to specify the receiving package with setPackage as well, so that no other app could receive the intent." \
+    'Uri u = Uri.parse(scheme+"://somepath");' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'Uri.parse\(' \
+    "2_android_uri_parse.txt"
+    
+    search "Android set data for an intent. It is important to specify the receiving package with setPackage as well, so that no other app could receive the intent." \
+    '.setData(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.setData\(' \
+    "2_android_intents_setData.txt"
+    
     search "Android get info about running processes" \
     'RunningAppProcessInfo' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -1944,12 +2030,6 @@ if [ "$DO_ANDROID" = "true" ]; then
     'X509TrustManager' \
     "2_android_ssl_x509TrustManager.txt"
     
-    search "Android get a key store" \
-    'KeyStore' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'KeyStore' \
-    "2_android_ssl_keyStorage.txt"
-    
     search "Insecure hostname verification." \
     'ALLOW_ALL_HOSTNAME_VERIFIER' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -1961,6 +2041,24 @@ if [ "$DO_ANDROID" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'implements TrustStrategy' \
     "2_android_ssl_trustStrategy.txt"
+    
+    search "Android get a key store, eg. to store private key or that include CA certificates used for TLS pinning, etc." \
+    'KeyStore' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'KeyStore' \
+    "2_android_keyStorage.txt"
+    
+    search "The Key Store provider AndroidKeyStore allows to do hardware-backed storage of Secret Keys (on supported hardware), see https://developer.android.com/training/articles/keystore.html" \
+    'KeyPairGenerator kpg = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, "AndroidKeyStore");' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'AndroidKeyStore' \
+    "2_android_AndroidKeyStore.txt"
+    
+    search "Android Hardware-Backed Key Store function to set time until Key is locked again" \
+    'setUserAuthenticationValidityDurationSeconds' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'setUserAuthenticationValidityDurationSeconds' \
+    "2_android_setUserAuthenticationValidityDurationSeconds.txt"
     
     search "Used to query other appps or let them query, see http://developer.android.com/guide/topics/providers/content-provider-basics.html" \
     'ContentResolver' \
@@ -2029,6 +2127,20 @@ fi
 if [ "$DO_IOS" = "true" ]; then
     
     echo "#Doing iOS"
+    
+    #Rule triggers for Objective-C and SWIFT
+    search "iOS fileURLWithPath opens a file, eg. for writing. Make sure attributes such as NSURLIsExcludedFromBackupKey described on https://developer.apple.com/library/content/qa/qa1719/_index.html are correctly set." \
+    'fileURLWithPath' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'fileURLWithPath' \
+    "2_ios_file_access_fileURLWithPath.txt"
+    
+    #Rule triggers for Objective-C and SWIFT
+    search "iOS NSURL opens a URL for example a local file, eg. for writing. Make sure attributes such as NSURLIsExcludedFromBackupKey described on https://developer.apple.com/library/content/qa/qa1719/_index.html are correctly set." \
+    'NSURL' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'NSURL' \
+    "3_ios_file_access_NSURL.txt"
     
     search "iOS File protection APIs" \
     'NSFileProtection' \
@@ -2130,55 +2242,109 @@ if [ "$DO_IOS" = "true" ]; then
     'initWithFormat:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'initWithFormat:' \
-    "3_ios_string_format_initWithFormat.txt"
+    "4_ios_string_format_initWithFormat_wide.txt"
+    
+    search "iOS string format function initWithFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
+    'initWithFormat:var' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'initWithFormat:[^@]' \
+    "3_ios_string_format_initWithFormat_narrow.txt"
     
     search "iOS string format function informativeTextWithFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'informativeTextWithFormat:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'informativeTextWithFormat:' \
-    "3_ios_string_format_informativeTextWithFormat.txt"
+    "4_ios_string_format_informativeTextWithFormat_wide.txt"
+    
+    search "iOS string format function informativeTextWithFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
+    'informativeTextWithFormat:var' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'informativeTextWithFormat:[^@]' \
+    "3_ios_string_format_informativeTextWithFormat_narrow.txt"
     
     search "iOS string format function format. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'format:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'format:' \
-    "3_ios_string_format_format.txt"
+    "4_ios_string_format_format_wide.txt"
+    
+    search "iOS string format function format. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
+    'format:var' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'format:[^@]' \
+    "3_ios_string_format_format_narrow.txt"
     
     search "iOS string format function stringWithFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'stringWithFormat:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'stringWithFormat:' \
-    "3_ios_string_format_stringWithFormat.txt"
+    "4_ios_string_format_stringWithFormat_wide.txt"
+    
+    search "iOS string format function stringWithFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
+    'stringWithFormat:var' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'stringWithFormat:[^@]' \
+    "3_ios_string_format_stringWithFormat_narrow.txt"
     
     search "iOS string format function appendFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'appendFormat:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'appendFormat:' \
-    "3_ios_string_format_appendFormat.txt"
+    "4_ios_string_format_appendFormat_wide.txt"
+    
+    search "iOS string format function appendFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
+    'appendFormat:var' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'appendFormat:[^@]' \
+    "3_ios_string_format_appendFormat_narrow.txt"
     
     search "iOS string format function predicateWithFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'predicateWithFormat:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'predicateWithFormat:' \
-    "3_ios_string_format_predicateWithFormat.txt"
+    "4_ios_string_format_predicateWithFormat_wide.txt"
+    
+    search "iOS string format function predicateWithFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
+    'predicateWithFormat:var' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'predicateWithFormat:[^@]' \
+    "3_ios_string_format_predicateWithFormat_narrow.txt"
     
     search "iOS string format function NSRunAlertPanel. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
-    'NSRunAlertPanel' \
+    'NSRunAlertPanel:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'NSRunAlertPanel' \
-    "3_ios_string_format_NSRunAlertPanel.txt"
+    'NSRunAlertPanel:' \
+    "4_ios_string_format_NSRunAlertPanel_wide.txt"
+    
+    search "iOS string format function NSRunAlertPanel. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
+    'NSRunAlertPanel:var' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'NSRunAlertPanel:[^@]' \
+    "3_ios_string_format_NSRunAlertPanel_narrow.txt"
     
     search "iOS string format function handleOpenURL. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'handleOpenURL:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'handleOpenURL:' \
-    "3_ios_string_format_url_handler_handleOpenURL.txt"
+    "4_ios_string_format_url_handler_handleOpenURL_wide.txt"
+    
+    search "iOS string format function handleOpenURL. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
+    'handleOpenURL:var' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'handleOpenURL:[^@]' \
+    "3_ios_string_format_url_handler_handleOpenURL_narrow.txt"
     
     search "iOS string format function openURL. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'openURL:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'openURL:' \
-    "3_ios_string_format_url_handler_openURL.txt"
+    "4_ios_string_format_url_handler_openURL_wide.txt"
+    
+    search "iOS string format function openURL. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
+    'openURL:var' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'openURL:[^@]' \
+    "3_ios_string_format_url_handler_openURL_narrow.txt"
     
     search "NSAllowsArbitraryLoads set to 1 allows iOS applications to load resources over insecure non-TLS protocols." \
     'NSAllowsArbitraryLoads' \
@@ -2242,7 +2408,7 @@ if [ "$DO_PYTHON" = "true" ]; then
     '2.2 * 3.0 == 3.3 * 2.2' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\s{1,$WILDCARD_SHORT}==\s{1,$WILDCARD_SHORT}" \
-    "2_python_float_equality_general.txt"
+    "4_python_float_equality_general.txt"
     
     search "Double underscore variable visibility can be tricky, see https://access.redhat.com/blogs/766093/posts/2592591" \
     'self.__private' \
@@ -2737,11 +2903,24 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     'Pwd' \
     "4_cryptocred_pwd_capitalcase.txt"
     
+    search "PW abbrevation for password" \
+    'PW=1234' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'PW.?=' \
+    "4_cryptocred_pw_capitalcase.txt"
+    
+    search "Credentials. Included everything 'creden' because some programers write credencials instead of credentials and such things." \
+    'credentials=1234' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "creden.{0,$WILDCARD_SHORT}.?=.?\"" \
+    "2_cryptocred_credentials_narrow.txt" \
+    "-i"
+    
     search "Credentials. Included everything 'creden' because some programers write credencials instead of credentials and such things." \
     'credentials' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'creden' \
-    "3_cryptocred_credentials.txt" \
+    "3_cryptocred_credentials_wide.txt" \
     "-i"
     
     search "Passcode and variants of it" \
@@ -2837,14 +3016,14 @@ if [ "$DO_GENERAL" = "true" ]; then
     search "Superuser. Sometimes the root user of *nix is referenced, sometimes it is about root detection on mobile phones (e.g. Android Superuser.apk app detection)" \
     'super_user' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "super.{0,$WILDCARD_SHORT}user" \
+    "super.?user" \
     "2_general_superuser.txt" \
     "-i"
     
     search "Su binary" \
     'sudo binary' \
     'suite.api.java.rql.construct.Binary, super(name, contentType, binary' \
-    "su.{0,$WILDCARD_SHORT}binary" \
+    "su.{0,3}binary" \
     "2_general_su-binary.txt" \
     "-i"
     
@@ -3031,6 +3210,13 @@ if [ "$DO_GENERAL" = "true" ]; then
     "5_general_backup.txt" \
     "-i"
     
+    search "Debugger related content. In JavaScript, the debugger statement (debugger;) is basically a breakpoint, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=js" \
+    'debugger' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "debugger" \
+    "4_general_debugger.txt" \
+    "-i"
+    
     search "Kernel. A reference to something low level in a Kernel?" \
     'Kernel' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -3132,7 +3318,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     #Take care with the following regex, @ has a special meaning in double quoted strings, but not in single quoted strings
     search "URIs with authentication information specified as username:password@example.org" \
     'username:password@example.com' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'android:duration="@integer/animator_heartbeat_scaling_duration"' \
     ".{1,$WILDCARD_SHORT}:.{1,$WILDCARD_SHORT}@" \
     "2_general_uris_auth_info_wide.txt" \
     "-i"
@@ -3217,9 +3403,20 @@ if [ "$DO_GENERAL" = "true" ]; then
     search "XSS. Sometimes refered in comments or variable names for code that should prevent it. If you find something interesting that is used for prevention in a framework, you might want to add another grep for that in this script." \
     'XSS' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'XSS' \
+    "2_general_xss_uppercase.txt"
+    
+    search "XSS. Sometimes refered in comments or variable names for code that should prevent it. If you find something interesting that is used for prevention in a framework, you might want to add another grep for that in this script." \
+    'Xss' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'Xss' \
+    "2_general_xss_regularcase.txt"
+        
+    search "XSS. Sometimes refered in comments or variable names for code that should prevent it. If you find something interesting that is used for prevention in a framework, you might want to add another grep for that in this script." \
     'xss' \
-    "2_general_xss.txt" \
-    "-i"
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'xss' \
+    "2_general_xss_lowercase.txt"
     
     search "Clickjacking and variants of it. Sometimes refered in comments or variable names for code that should prevent it. If you find something interesting that is used for prevention in a framework, you might want to add another grep for that in this script." \
     'click-jacking' \
@@ -3299,25 +3496,31 @@ if [ "$DO_GENERAL" = "true" ]; then
     "4_general_sql_sqlite.txt" \
     "-i"
     
-    search "Base64 encoded data (that is more than 6 bytes long). This regex won't detect a base64 encoded value over several lines..." \
+    #As the following regex had way too many false positives (thousands of english words match), we require the base64 to include
+    #at least one equal sign at the end. The old regex was:
+    #'(?:[A-Za-z0-9_-]{4})+(?:[A-Za-z0-9_-]{2}==|[A-Za-z0-9_-]{3}=)'
+    search "Base64 encoded data (that is more than 6 bytes long). This regex won't detect a base64 encoded value over several lines and won't detect one that does not end with an equal sign..." \
     'YWJj YScqKyo6LV/Dpw==' \
     '/target/ //JQLite - the following ones shouldnt be an issue anymore as we require more than 6 bytes: done echo else gen/ ////' \
-    '(?:[A-Za-z0-9+/]{4})+(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})' \
-    "2_general_base64_content.txt"
+    '(?:[A-Za-z0-9+/]{4})+(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)' \
+    "4_general_base64_content.txt"
     #case sensitive, the regex is insensitive anyway
     
-    search "Base64 URL-safe encoded data (that is more than 6 bytes long). To get from URL-safe base64 to regular base64 you need .replace('-','+').replace('_','/'). This regex won't detect a base64 encoded value over several lines..." \
+    #As the following regex had way too many false positives (thousands of english words match), we require the base64 to include
+    #at least one equal sign at the end. The old regex was:
+    #'(?:[A-Za-z0-9_-]{4})+(?:[A-Za-z0-9_-]{2}==|[A-Za-z0-9_-]{3}=|[A-Za-z0-9_-]{4})'
+    search "Base64 URL-safe encoded data (that is more than 6 bytes long). To get from URL-safe base64 to regular base64 you need .replace('-','+').replace('_','/'). This regex won't detect a base64 encoded value over several lines and won't detect one that does not end with an equal sign..." \
     'YScqKyo6LV_Dpw==' \
     '/target/ //JQLite - the following ones shouldnt be an issue anymore as we require more than 6 bytes: done echo else gen/ ////' \
-    '(?:[A-Za-z0-9_-]{4})+(?:[A-Za-z0-9_-]{2}==|[A-Za-z0-9_-]{3}=|[A-Za-z0-9_-]{4})' \
-    "2_general_base64_urlsafe.txt"
+    '(?:[A-Za-z0-9_-]{4})+(?:[A-Za-z0-9_-]{2}==|[A-Za-z0-9_-]{3}=)' \
+    "4_general_base64_urlsafe.txt"
     #case sensitive, the regex is insensitive anyway
     
     search "Base64 as a word used" \
     'Base64' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'base64' \
-    "2_general_base64_word.txt" \
+    "3_general_base64_word.txt" \
     "-i"
     
     search "GPL violation? Not security related, but your customer might be happy to know such stuff" \

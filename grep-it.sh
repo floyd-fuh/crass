@@ -2142,7 +2142,91 @@ if [ "$DO_IOS" = "true" ]; then
     'NSURL' \
     "3_ios_file_access_NSURL.txt"
     
-    search "iOS File protection APIs" \
+    search "iOS NSURLConnection." \
+    'NSURLConnection' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'NSURLConnection' \
+    "3_ios_file_access_NSURLConnection.txt"
+    
+    search "iOS NSFile" \
+    'NSFile' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'NSFile' \
+    "4_ios_file_access_nsfile.txt"
+    
+    search "iOS writeToFile" \
+    'writeToFile' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'writeToFile' \
+    "3_ios_file_access_writeToFile.txt"
+    
+    search "iOS writeToUrl" \
+    'writeToUrl' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'writeToUrl' \
+    "3_ios_writeToUrl.txt"
+    
+    search "iOS loadHTMLString method of UIWebView in iOS" \
+    'loadHTMLString' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'loadHTMLString' \
+    "3_ios_loadHTMLString.txt"
+    
+    search "iOS loadRequest method of UIWebView in iOS" \
+    'loadRequest' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'loadRequest' \
+    "3_ios_loadRequest.txt"
+    
+    search "iOS shouldStartLoadWithRequest method of UIWebView in iOS" \
+    'shouldStartLoadWithRequest' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'shouldStartLoadWithRequest' \
+    "3_ios_shouldStartLoadWithRequest.txt"
+    
+    search "iOS stringByEvaluatingJavaScriptFromString method of UIWebView in iOS" \
+    'stringByEvaluatingJavaScriptFromString' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'stringByEvaluatingJavaScriptFromString' \
+    "3_ios_stringByEvaluatingJavaScriptFromString.txt"
+    
+    search "iOS canAuthenticateAgainstProtectionSpace to authenticate to a server" \
+    'canAuthenticateAgainstProtectionSpace' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'canAuthenticateAgainstProtectionSpace' \
+    "3_ios_canAuthenticateAgainstProtectionSpace.txt"
+    
+    search "iOS didReceiveAuthenticationChallenge" \
+    'didReceiveAuthenticationChallenge' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'didReceiveAuthenticationChallenge' \
+    "3_ios_didReceiveAuthenticationChallenge.txt"
+    
+    search "iOS willSendRequestForAuthenticationChallenge" \
+    'willSendRequestForAuthenticationChallenge' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'willSendRequestForAuthenticationChallenge' \
+    "3_ios_willSendRequestForAuthenticationChallenge.txt"
+    
+    search "iOS continueWithoutCredentialForAuthenticationChallenge" \
+    'continueWithoutCredentialForAuthenticationChallenge' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'continueWithoutCredentialForAuthenticationChallenge' \
+    "3_ios_continueWithoutCredentialForAuthenticationChallenge.txt"    
+    
+    search "iOS setAllowsAnyHTTPSCertificate is a private API and will therefore be rejected when submitted to the Apple Store, nevertheless interesting to see if it is present" \
+    'setAllowsAnyHTTPSCertificate' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'setAllowsAnyHTTPSCertificate' \
+    "3_ios_setAllowsAnyHTTPSCertificate.txt"
+    
+    search "iOS NSHTTPCookieAcceptPolicy method of UIWebView in iOS, NSHTTPCookieAcceptPolicyNever or NSHTTPCookieAcceptPolicyOnlyFromMainDocumentDomain" \
+    'NSHTTPCookieAcceptPolicy' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'NSHTTPCookieAcceptPolicy' \
+    "3_ios_NSHTTPCookieAcceptPolicy.txt"
+    
+    search "iOS File protection APIs, NSFileProtectionKey, NSFileProtectionNone, NSFileProtectionComplete, NSFileProtectionCompleteUnlessOpen, NSFileProtectionCompleteUntilFirstUserAuthentication." \
     'NSFileProtection' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'NSFileProtection' \
@@ -2160,8 +2244,8 @@ if [ "$DO_IOS" = "true" ]; then
     'NSPersistantStoreCoordinator' \
     "3_ios_file_access_nspersistantstorecoordinator.txt"
     
-    search "iOS File protection APIs" \
-    'NSData' \
+    search "iOS File protection APIs, NSDataWritingFileProtectionNone, NSDataWritingFileProtectionComplete, NSDataWritingFileProtectionCompleteUnlessOpen, NSDataWritingFileProtectionCompleteUntilFirstUserAuthentication" \
+    'NSDataWritingFileProtectionNone' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'NSData' \
     "3_ios_file_access_nsdata.txt"
@@ -2179,6 +2263,18 @@ if [ "$DO_IOS" = "true" ]; then
     "3_ios_keychain_secitemadd.txt"
     
     search "iOS Keychain stuff" \
+    'SecItemUpdate' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'SecItemUpdate' \
+    "3_ios_keychain_SecItemUpdate.txt"
+    
+    search "iOS Keychain stuff" \
+    'SecItemCopyMatching' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'SecItemCopyMatching' \
+    "3_ios_keychain_SecItemCopyMatching.txt"
+    
+    search "iOS Keychain stuff" \
     'KeychainItemWrapper' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'KeychainItemWrapper' \
@@ -2190,23 +2286,101 @@ if [ "$DO_IOS" = "true" ]; then
     'Security\.h' \
     "3_ios_keychain_security_h.txt"
     
-    search "CFBundleURLSchemes" \
-    'CFBundleURLSchemes' \
+    search "CFStream" \
+    'CFStream' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'CFBundleURLSchemes' \
-    "3_ios_CFBundleURLSchemes.txt"
+    'CFStream' \
+    "3_ios_CFStream.txt"
     
-    search "kCFStream" \
-    'kCFStream' \
+    search "kCFStreamSSLAllowsExpiredCertificates" \
+    'kCFStreamSSLAllowsExpiredCertificates' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'kCFStream' \
-    "3_ios_kCFStream.txt"
+    'kCFStreamSSLAllowsExpiredCertificates' \
+    "2_ios_kCFStreamSSLAllowsExpiredCertificates.txt"
+    
+    search "kCFStreamSSLAllowsExpiredRoots" \
+    'kCFStreamSSLAllowsExpiredRoots' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'kCFStreamSSLAllowsExpiredRoots' \
+    "2_ios_kCFStreamSSLAllowsExpiredRoots.txt"
+    
+    search "kCFStreamSSLAllowsAnyRoot" \
+    'kCFStreamSSLAllowsAnyRoot' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'kCFStreamSSLAllowsAnyRoot' \
+    "2_ios_kCFStreamSSLAllowsAnyRoot.txt"
+    
+    search "kCFStreamSSLValidatesCertificateChain" \
+    'kCFStreamSSLValidatesCertificateChain' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'kCFStreamSSLValidatesCertificateChain' \
+    "2_ios_kCFStreamSSLValidatesCertificateChain.txt"
+    
+    search "kCFStreamPropertySSLSettings" \
+    'kCFStreamPropertySSLSettings' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'kCFStreamPropertySSLSettings' \
+    "3_ios_kCFStreamPropertySSLSettings.txt"
+    
+    search "kCFStreamSSLPeerName" \
+    'kCFStreamSSLPeerName' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'kCFStreamSSLPeerName' \
+    "3_ios_kCFStreamSSLPeerName.txt"
+    
+    search "kSecTrustOptionAllowExpired" \
+    'kSecTrustOptionAllowExpired' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'kSecTrustOptionAllowExpired' \
+    "2_ios_kSecTrustOptionAllowExpired.txt"
+    
+    search "kSecTrustOptionAllowExpiredRoot" \
+    'kSecTrustOptionAllowExpiredRoot' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'kSecTrustOptionAllowExpiredRoot' \
+    "2_ios_kSecTrustOptionAllowExpiredRoot.txt"
+    
+    search "kSecTrustOptionImplicitAnchors" \
+    'kSecTrustOptionImplicitAnchors' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'kSecTrustOptionImplicitAnchors' \
+    "3_ios_kSecTrustOptionImplicitAnchors.txt"
+    
+    search "NSStreamSocketSecurityLevel" \
+    'NSStreamSocketSecurityLevel' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'NSStreamSocketSecurityLevel' \
+    "3_ios_NSStreamSocketSecurityLevel.txt"
+    
+    search "NSCachedURLResponse willCacheResponse" \
+    'willCacheResponse' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'willCacheResponse' \
+    "3_ios_willCacheResponse.txt"
     
     search "CFFTPStream" \
     'CFFTPStream' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'CFFTPStream' \
     "3_ios_CFFTPStream.txt"
+    
+    search "NSStreamin" \
+    'NSStreamin' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'NSStreamin' \
+    "3_ios_NSStreamin.txt"
+    
+    search "NSXMLParser" \
+    'NSXMLParser' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'NSXMLParser' \
+    "3_ios_NSXMLParser.txt"
+    
+    search "UIPasteboardNameGeneral and UIPasteboardNameFind" \
+    'UIPasteboardName' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'UIPasteboardName' \
+    "3_ios_UIPasteboardName.txt"
     
     search "CFHTTP" \
     'CFHTTP' \
@@ -2286,6 +2460,18 @@ if [ "$DO_IOS" = "true" ]; then
     'stringWithFormat:[^@]' \
     "3_ios_string_format_stringWithFormat_narrow.txt"
     
+    search "iOS string format function stringByAppendingFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
+    'stringByAppendingFormat:' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'stringByAppendingFormat:' \
+    "4_ios_string_format_stringByAppendingFormat_wide.txt"
+    
+    search "iOS string format function stringByAppendingFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
+    'stringByAppendingFormat:var' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'stringByAppendingFormat:[^@]' \
+    "3_ios_string_format_stringByAppendingFormat_narrow.txt"
+    
     search "iOS string format function appendFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'appendFormat:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -2322,35 +2508,42 @@ if [ "$DO_IOS" = "true" ]; then
     'NSRunAlertPanel:[^@]' \
     "3_ios_string_format_NSRunAlertPanel_narrow.txt"
     
-    search "iOS string format function handleOpenURL. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
-    'handleOpenURL:' \
+    search "iOS URL handler handleOpenURL" \
+    'handleOpenURL' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'handleOpenURL:' \
-    "4_ios_string_format_url_handler_handleOpenURL_wide.txt"
+    'handleOpenURL' \
+    "3_ios_string_format_url_handler_handleOpenURL.txt"
     
-    search "iOS string format function handleOpenURL. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
-    'handleOpenURL:var' \
+    search "iOS URL handler openURL" \
+    'openURL' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'handleOpenURL:[^@]' \
-    "3_ios_string_format_url_handler_handleOpenURL_narrow.txt"
+    'openURL' \
+    "3_ios_string_format_url_handler_openURL.txt"
     
-    search "iOS string format function openURL. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
-    'openURL:' \
+    search "sourceApplication is a parameter used in the application method used for custom URL handling and receiving data from another app, see https://developer.apple.com/documentation/uikit/uiapplicationdelegate/1623073-application . See also https://developer.apple.com/library/content/documentation/iPhone/Conceptual/iPhoneOSProgrammingGuide/Inter-AppCommunication/Inter-AppCommunication.html ." \
+    'sourceApplication:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'openURL:' \
-    "4_ios_string_format_url_handler_openURL_wide.txt"
+    'sourceApplication:' \
+    "2_ios_sourceApplication.txt"
     
-    search "iOS string format function openURL. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
-    'openURL:var' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'openURL:[^@]' \
-    "3_ios_string_format_url_handler_openURL_narrow.txt"
-    
-    search "NSAllowsArbitraryLoads set to 1 allows iOS applications to load resources over insecure non-TLS protocols." \
+    #Below here Info.plist stuff
+    search "NSAllowsArbitraryLoads set to 1 allows iOS applications to load resources over insecure non-TLS protocols and is specified in the Info.plist file. It doesn't mean the application is really doing it, however, it is recommended to disable non-TLS connections." \
     'NSAllowsArbitraryLoads' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'NSAllowsArbitraryLoads' \
     "2_ios_NSAllowsArbitraryLoads.txt"
+    
+    search "CFBundleDocumentTypes defines in the Info.plist file what kind of documents can be opened with this application, example of such a handler can be found here: https://stackoverflow.com/questions/2774343/how-do-i-associate-file-types-with-an-iphone-application#2781290 . See also https://developer.apple.com/library/content/documentation/iPhone/Conceptual/iPhoneOSProgrammingGuide/Inter-AppCommunication/Inter-AppCommunication.html ." \
+    'CFBundleDocumentTypes' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'CFBundleDocumentTypes' \
+    "2_ios_CFBundleDocumentTypes.txt"
+    
+    search "CFBundleURLTypes defines int he Info.plist file a custom URL handler that will trigger the application and is used as an IPC mechanism. See also https://developer.apple.com/library/content/documentation/iPhone/Conceptual/iPhoneOSProgrammingGuide/Inter-AppCommunication/Inter-AppCommunication.html ." \
+    'CFBundleURLTypes' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'CFBundleURLTypes' \
+    "2_ios_CFBundleURLTypes.txt"
 
 fi
 
@@ -2912,7 +3105,7 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     search "Credentials. Included everything 'creden' because some programers write credencials instead of credentials and such things." \
     'credentials=1234' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "creden.{0,$WILDCARD_SHORT}.?=.?\"" \
+    "creden.{0,$WILDCARD_SHORT}=.?" \
     "2_cryptocred_credentials_narrow.txt" \
     "-i"
     
@@ -3311,7 +3504,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     search "URIs with authentication information specified as ://username:password@example.org" \
     'http://username:password@example.com' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "://.{1,$WILDCARD_SHORT}:.{1,$WILDCARD_SHORT}@" \
+    "://[^ ]{1,$WILDCARD_SHORT}:[^ ]{1,$WILDCARD_SHORT}@" \
     "1_general_uris_auth_info_narrow.txt" \
     "-i"
     
@@ -3319,7 +3512,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     search "URIs with authentication information specified as username:password@example.org" \
     'username:password@example.com' \
     'android:duration="@integer/animator_heartbeat_scaling_duration"' \
-    ".{1,$WILDCARD_SHORT}:.{1,$WILDCARD_SHORT}@" \
+    "[^ ]{1,$WILDCARD_SHORT}:[^ ]{1,$WILDCARD_SHORT}@" \
     "2_general_uris_auth_info_wide.txt" \
     "-i"
     
@@ -3379,11 +3572,32 @@ if [ "$DO_GENERAL" = "true" ]; then
     "4_general_hidden.txt" \
     "-i"
     
+    search "Scheme. Is the first part of a URI aka 'the protocol'." \
+    'RouteUrlWithScheme' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'scheme' \
+    "3_general_scheme.txt" \
+    "-i"
+    
+    search "Schema. Eg. a database schema." \
+    'database schema' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'schema' \
+    "3_general_schema.txt" \
+    "-i"
+    
     search "WSDL defines web services" \
     'example.wsdl' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'wsdl' \
     "3_general_wsdl.txt" \
+    "-i"
+    
+    search "WebView, often used to display HTML content inside native apps" \
+    'webview' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'webview' \
+    "3_general_webview.txt" \
     "-i"
     
     search "Directory listing, usually a bad idea in web servers." \
@@ -3494,6 +3708,20 @@ if [ "$DO_GENERAL" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "sqlite" \
     "4_general_sql_sqlite.txt" \
+    "-i"
+    
+    search "SQL cursor?" \
+    'cursor' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "cursor" \
+    "4_general_sql_cursor.txt" \
+    "-i"
+    
+    search "sqlcipher, used to encrypt database entries transparently" \
+    'sqlcipher' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "sqlcipher" \
+    "3_general_sql_sqlcipher.txt" \
     "-i"
     
     #As the following regex had way too many false positives (thousands of english words match), we require the base64 to include

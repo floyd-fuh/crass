@@ -139,7 +139,7 @@ DO_GENERAL="true"
 #  - http://www.splint.org/
 
 #When the following flag is enable the tool switches to testing mode and won't do the actual work
-DEBUG_TEST_FLAG="true"
+DEBUG_TEST_FLAG="false"
 #A helper var for debugging purposes
 DEBUG_TMP_OUTFILE_NAMES=""
 

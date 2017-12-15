@@ -1848,6 +1848,18 @@ if [ "$DO_ANDROID" = "true" ]; then
     
     echo "#Doing Android"
     
+    search "Dexguard has methods to do temper detection/root detection." \
+    'int check = dexguard.util.TamperDetector.checkApk(context);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'TamperDetector' \
+    "2_android_dexguar_TamperDetector.txt"
+    
+    search "Dexguard has methods to check if the app was repacked." \
+    'int check = dexguard.util.CertificateChecker.checkCertificate(context);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'CertificateChecker' \
+    "2_android_dexguar_CertificateChecker.txt"
+    
     search "From http://developer.android.com/reference/android/util/Log.html : The order in terms of verbosity, from least to most is ERROR, WARN, INFO, DEBUG, VERBOSE. Verbose should never be compiled into an application except during development. Debug logs are compiled in but stripped at runtime. Error, warning and info logs are always kept." \
     'Log.e(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -1986,26 +1998,32 @@ if [ "$DO_ANDROID" = "true" ]; then
     'compileStatement\(' \
     "3_android_access_compileStatement.txt"
     
-    search "Registering receivers and sending broadcasts can be dangerous when exported. See http://resources.infosecinstitute.com/android-hacking-security-part-3-exploiting-broadcast-receivers/" \
+    search "Registering receivers and sending broadcasts can be dangerous when exported (which is the case here). See http://resources.infosecinstitute.com/android-hacking-security-part-3-exploiting-broadcast-receivers/" \
     'android:exported=true' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "android:exported.{0,$WILDCARD_SHORT}true" \
     "3_android_intents_intent-filter_exported.txt" \
     "-i"
     
-    search "Registering receivers and sending broadcasts can be dangerous when exported. See http://resources.infosecinstitute.com/android-hacking-security-part-3-exploiting-broadcast-receivers/" \
+    search "Registering receivers manually means that every Intent that is sent and matches the specified filter. Can be dangerous. See http://resources.infosecinstitute.com/android-hacking-security-part-3-exploiting-broadcast-receivers/" \
     'registerReceiver(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "registerReceiver\(" \
-    "3_android_intents_intent-filter_registerReceiver.txt" \
+    "2_android_intents_intent-filter_registerReceiver.txt" \
     "-i"
     
-    search "Registering receivers and sending broadcasts can be dangerous when exported. See http://resources.infosecinstitute.com/android-hacking-security-part-3-exploiting-broadcast-receivers/" \
+    search "Sending broadcasts can be dangerous. See http://resources.infosecinstitute.com/android-hacking-security-part-3-exploiting-broadcast-receivers/" \
     'sendBroadcast(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "sendBroadcast\(" \
     "3_android_intents_intent-filter_sendBroadcast.txt" \
     "-i"
+    
+    search "Android startActivity starts another Activity" \
+    'startActivity(intent);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'startActivity\(' \
+    "2_android_intents_startActivity.txt"
     
     search "Android get intent" \
     '.getIntent(' \
@@ -2084,6 +2102,42 @@ if [ "$DO_ANDROID" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.setWebContentsDebuggingEnabled\(' \
     "1_android_setWebContentsDebuggingEnabled.txt"
+    
+    search "File system access is often enabled WebViews. Private files could be read by malicious contents. Eg. file://data/data/ch.example/secret.txt" \
+    '.loadData(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.loadData\(' \
+    "2_android_webview_loadData.txt"
+    
+    search "File system access is often enabled WebViews. Private files could be read by malicious contents. Eg. file://data/data/ch.example/secret.txt" \
+    '.loadUrl(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.loadUrl\(' \
+    "2_android_webview_loadUrl.txt"
+    
+    search "Changing the security settings of WebViews could allow malicious contents in the WebView to read private data, etc." \
+    'setAllowUniversalAccessFromFileURLs' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'setAllowUniversalAccessFromFileURLs' \
+    "2_android_webview_setAllowUniversalAccessFromFileURLs.txt"
+    
+    search "Changing the security settings of WebViews could allow malicious contents in the WebView to read private data, etc." \
+    'setAllowFileAccess' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'setAllowFileAccess' \
+    "2_android_webview_setAllowFileAccess.txt"
+    
+    search "Changing the security settings of WebViews could allow malicious contents in the WebView to read private data, etc." \
+    '.setAllow(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.setAllow\(' \
+    "3_android_webview_setAllow.txt"
+    
+    search "Acitivity flagged as new task, might lead to task hijacking: https://www.usenix.org/system/files/conference/usenixsecurity15/sec15-paper-ren-chuangang.pdf" \
+    'intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'FLAG_ACTIVITY_NEW_TASK' \
+    "3_android_FLAG_ACTIVITY_NEW_TASK.txt"
     
     search "If an Android app wants to specify how the app is backuped, you use BackupAgent to interfere... Often shows which sensitive data is not written to the backup. See https://developer.android.com/reference/android/app/backup/BackupAgent.html" \
     'new BackupAgent()' \
@@ -2263,7 +2317,32 @@ if [ "$DO_IOS" = "true" ]; then
     'NSData' \
     "3_ios_file_access_nsdata.txt"
     
-    search "iOS Keychain stuff" \
+    # The following regex match if it is not a "T" that would indicate the "ThisDeviceOnly" part
+    search "iOS Keychain kSecAttrAccessibleWhenUnlocked should be kSecAttrAccessibleWhenUnlockedThisDeviceOnly to make sure they are not backuped, see https://developer.apple.com/documentation/security/ksecattraccessiblewhenunlocked" \
+    'kSecAttrAccessibleWhenUnlocked and something afterwards' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'kSecAttrAccessibleWhenUnlocked[^T]' \
+    "2_ios_keychain_kSecAttrAccessibleWhenUnlocked.txt"
+    
+    search "iOS Keychain kSecAttrAccessibleAfterFirstUnlock should be kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly to make sure they are not backuped, see https://developer.apple.com/documentation/security/ksecattraccessiblewhenunlocked" \
+    'kSecAttrAccessibleAfterFirstUnlock and something afterwards' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'kSecAttrAccessibleAfterFirstUnlock[^T]' \
+    "2_ios_keychain_kSecAttrAccessibleAfterFirstUnlock.txt"
+    
+    search "iOS Keychain kSecAttrAccessibleWhenPasscodeSet should be kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly to make sure they are not backuped, see https://developer.apple.com/documentation/security/ksecattraccessiblewhenunlocked" \
+    'kSecAttrAccessibleWhenPasscodeSet and something afterwards' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'kSecAttrAccessibleWhenPasscodeSet[^T]' \
+    "2_ios_keychain_kSecAttrAccessibleWhenPasscodeSet.txt"
+    
+    search "iOS Keychain kSecAttrAccessibleAlways should be kSecAttrAccessibleAlwaysThisDeviceOnly to make sure they are not backuped, see https://developer.apple.com/documentation/security/ksecattraccessiblewhenunlocked" \
+    'kSecAttrAccessibleAlways and something afterwards' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'kSecAttrAccessibleAlways[^T]' \
+    "2_ios_keychain_kSecAttrAccessibleAlways.txt"
+    
+    search "iOS Keychain stuff, general match" \
     'kSecAttrAccessible' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'kSecAttrAccessible' \
@@ -2976,6 +3055,13 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'SHA-?512' \
     "3_cryptocred_ciphers_sha512.txt" \
+    "-i"
+    
+    search "PBKDF2. Security depends heavily on usage and what is secured." \
+    'PBKDF2' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'PBKDF2' \
+    "3_cryptocred_ciphers_PBKDF2.txt" \
     "-i"
     
     search "NTLM. Security depends heavily on usage and what is secured." \

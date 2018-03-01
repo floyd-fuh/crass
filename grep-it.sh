@@ -2233,6 +2233,12 @@ if [ "$DO_IOS" = "true" ]; then
     'writeToUrl' \
     "3_ios_writeToUrl.txt"
     
+    search "iOS UIWebView, see also https://github.com/felixgr/secure-ios-app-dev" \
+    'UIWebView' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'UIWebView' \
+    "3_ios_UIWebView.txt"
+    
     search "iOS loadHTMLString method of UIWebView in iOS" \
     'loadHTMLString' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -2280,6 +2286,18 @@ if [ "$DO_IOS" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'continueWithoutCredentialForAuthenticationChallenge' \
     "3_ios_continueWithoutCredentialForAuthenticationChallenge.txt"    
+    
+    search "iOS ValidatesSecureCertificate" \
+    'ValidatesSecureCertificate' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'ValidatesSecureCertificate' \
+    "3_ios_ValidatesSecureCertificate.txt"
+    
+    search "iOS setValidatesSecureCertificate" \
+    'setValidatesSecureCertificate' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'setValidatesSecureCertificate' \
+    "3_ios_setValidatesSecureCertificate.txt"  
     
     search "iOS setAllowsAnyHTTPSCertificate is a private API and will therefore be rejected when submitted to the Apple Store, nevertheless interesting to see if it is present" \
     'setAllowsAnyHTTPSCertificate' \
@@ -2341,6 +2359,12 @@ if [ "$DO_IOS" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'kSecAttrAccessibleAlways[^T]' \
     "2_ios_keychain_kSecAttrAccessibleAlways.txt"
+    
+    search "iOS Keychain kSecAttrSynchronizable should be false, see https://github.com/felixgr/secure-ios-app-dev" \
+    'kSecAttrSynchronizable' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'kSecAttrSynchronizable' \
+    "2_ios_keychain_kSecAttrSynchronizable.txt"
     
     search "iOS Keychain stuff, general match" \
     'kSecAttrAccessible' \
@@ -2576,6 +2600,18 @@ if [ "$DO_IOS" = "true" ]; then
     'appendFormat:[^@]' \
     "3_ios_string_format_appendFormat_narrow.txt"
     
+    search "iOS string format function alertWithMessageText. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
+    'alertWithMessageText:' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'alertWithMessageText:' \
+    "4_ios_string_format_alertWithMessageText_wide.txt"
+    
+    search "iOS string format function alertWithMessageText. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
+    'alertWithMessageText:var' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'alertWithMessageText:[^@]' \
+    "3_ios_string_format_alertWithMessageText_narrow.txt"
+    
     search "iOS string format function predicateWithFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'predicateWithFormat:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -2587,6 +2623,12 @@ if [ "$DO_IOS" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'predicateWithFormat:[^@]' \
     "3_ios_string_format_predicateWithFormat_narrow.txt"
+    
+    search "iOS string format function of NSException. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
+    '[NSException raise:format:]' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    ':format' \
+    "3_ios_string_format.txt"
     
     search "iOS string format function NSRunAlertPanel. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'NSRunAlertPanel:' \
@@ -2600,7 +2642,7 @@ if [ "$DO_IOS" = "true" ]; then
     'NSRunAlertPanel:[^@]' \
     "3_ios_string_format_NSRunAlertPanel_narrow.txt"
     
-    search "iOS URL handler handleOpenURL" \
+    search "iOS URL handler handleOpenURL, also see https://github.com/felixgr/secure-ios-app-dev" \
     'handleOpenURL' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'handleOpenURL' \
@@ -2636,7 +2678,163 @@ if [ "$DO_IOS" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'CFBundleURLTypes' \
     "2_ios_CFBundleURLTypes.txt"
-
+    
+    search "SecRandomCopyBytes cryptographic secure random number, see also https://github.com/felixgr/secure-ios-app-dev" \
+    'int r = SecRandomCopyBytes(kSecRandomDefault, sizeof(int), (uint8_t*) &res);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'SecRandomCopyBytes' \
+    "3_ios_SecRandomCopyBytes.txt"
+    
+    search "allowScreenShot, see also https://github.com/felixgr/secure-ios-app-dev" \
+    'allowScreenShot' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'allowScreenShot' \
+    "3_ios_allowScreenShot.txt"
+    
+    search "UIPasteboardNameGeneral, see also https://github.com/felixgr/secure-ios-app-dev" \
+    'UIPasteboardNameGeneral' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'UIPasteboardNameGeneral' \
+    "3_ios_UIPasteboardNameGeneral.txt"
+    
+    search "secureTextEntry, see also https://github.com/felixgr/secure-ios-app-dev" \
+    'secureTextEntry' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'secureTextEntry' \
+    "3_ios_secureTextEntry.txt"
+    
+    search "NSCoding, see also https://github.com/felixgr/secure-ios-app-dev" \
+    'NSCoding' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'NSCoding' \
+    "3_ios_NSCoding.txt"
+    
+    search "Other deserialization (CFBundle, NSBundle, NSKeyedUnarchiverDelegate, didDecodeObject, awakeAfterUsingCoder) can directly lead to code execution by returning different objects during deserialization. See also https://github.com/felixgr/secure-ios-app-dev" \
+    'CFBundle' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'CFBundle' \
+    "3_ios_CFBundle.txt"
+    
+    search "Other deserialization (CFBundle, NSBundle, NSKeyedUnarchiverDelegate, didDecodeObject, awakeAfterUsingCoder) can directly lead to code execution by returning different objects during deserialization. See also https://github.com/felixgr/secure-ios-app-dev" \
+    'NSBundle' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'NSBundle' \
+    "3_ios_NSBundle.txt"
+    
+    search "Other deserialization (CFBundle, NSBundle, NSKeyedUnarchiverDelegate, didDecodeObject, awakeAfterUsingCoder) can directly lead to code execution by returning different objects during deserialization. See also https://github.com/felixgr/secure-ios-app-dev" \
+    'NSKeyedUnarchiverDelegate' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'NSKeyedUnarchiverDelegate' \
+    "3_ios_NSKeyedUnarchiverDelegate.txt"
+    
+    search "Other deserialization (CFBundle, NSBundle, NSKeyedUnarchiverDelegate, didDecodeObject, awakeAfterUsingCoder) can directly lead to code execution by returning different objects during deserialization. See also https://github.com/felixgr/secure-ios-app-dev" \
+    'didDecodeObject' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'didDecodeObject' \
+    "3_ios_didDecodeObject.txt"
+    
+    search "Other deserialization (CFBundle, NSBundle, NSKeyedUnarchiverDelegate, didDecodeObject, awakeAfterUsingCoder) can directly lead to code execution by returning different objects during deserialization. See also https://github.com/felixgr/secure-ios-app-dev" \
+    'awakeAfterUsingCoder' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'awakeAfterUsingCoder' \
+    "3_ios_awakeAfterUsingCoder.txt"
+    
+    search "Check for SQL injection. See also https://github.com/felixgr/secure-ios-app-dev" \
+    'sqlite3_exec()' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'sqlite3_exec\(' \
+    "2_ios_sqlite3_exec.txt"
+    
+    search "Check for SQL injection. See also https://github.com/felixgr/secure-ios-app-dev" \
+    'sqlite3_prepare' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'sqlite3_prepare' \
+    "4_ios_sqlite3_prepare.txt"
+    
+    search "libsqlite3.dylib in iOS supports fts3_tokenizer function, which has two security issues by design. See also https://github.com/felixgr/secure-ios-app-dev" \
+    'fts3_tokenizer' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'fts3_tokenizer' \
+    "2_ios_fts3_tokenizer.txt"
+    
+    search "allowedInsecureSchemes, see also https://github.com/felixgr/secure-ios-app-dev" \
+    'allowedInsecureSchemes' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'allowedInsecureSchemes' \
+    "2_ios_allowedInsecureSchemes.txt"
+    
+    search "allowLocalhostRequest, see also https://github.com/felixgr/secure-ios-app-dev" \
+    'allowLocalhostRequest' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'allowLocalhostRequest' \
+    "2_ios_allowLocalhostRequest.txt"
+    
+    search "GTM_ALLOW_INSECURE_REQUESTS, see also https://github.com/felixgr/secure-ios-app-dev" \
+    'GTM_ALLOW_INSECURE_REQUESTS' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'GTM_ALLOW_INSECURE_REQUESTS' \
+    "2_ios_GTM_ALLOW_INSECURE_REQUESTS.txt"
+    
+    search "registerForRemoteNotificationTypes, see also https://github.com/felixgr/secure-ios-app-dev" \
+    'registerForRemoteNotificationTypes' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'registerForRemoteNotificationTypes' \
+    "2_ios_registerForRemoteNotificationTypes.txt"
+    
+    search "CFDataRef might lead to memory corruption issues when incorrectly converted from/to C string, see also https://github.com/felixgr/secure-ios-app-dev" \
+    'CFDataRef' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'CFDataRef' \
+    "4_ios_CFDataRef.txt"
+    
+    search "CFStringRef might lead to memory corruption issues when incorrectly converted from/to C string, see also https://github.com/felixgr/secure-ios-app-dev" \
+    'CFStringRef' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'CFStringRef' \
+    "4_ios_CFStringRef.txt"
+    
+    search "NSString might lead to memory corruption issues when incorrectly converted from/to C string, see also https://github.com/felixgr/secure-ios-app-dev" \
+    'NSString' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'NSString' \
+    "4_ios_NSString.txt"
+    
+    search "Format string vulnerable syslog method, see also https://github.com/felixgr/secure-ios-app-dev" \
+    'syslog(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'syslog\(' \
+    "2_ios_syslog.txt"
+    
+    search "Format string vulnerable CFStringCreateWithFormat method, see also https://github.com/felixgr/secure-ios-app-dev" \
+    'CFStringCreateWithFormat' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'CFStringCreateWithFormat' \
+    "2_ios_CFStringCreateWithFormat.txt"
+    
+    search "Format string vulnerable CFStringAppendFormat method, see also https://github.com/felixgr/secure-ios-app-dev" \
+    'CFStringAppendFormat' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'CFStringAppendFormat' \
+    "2_ios_CFStringAppendFormat.txt"
+    
+    search "UnsafePointer for Swift methods, see also https://github.com/felixgr/secure-ios-app-dev" \
+    'UnsafePointer' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'UnsafePointer' \
+    "2_ios_UnsafePointer.txt"
+    
+    search "UnsafeMutablePointer for Swift methods, see also https://github.com/felixgr/secure-ios-app-dev" \
+    'UnsafeMutablePointer' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'UnsafeMutablePointer' \
+    "2_ios_UnsafeMutablePointer.txt"
+    
+    search "UnsafeCollection for Swift methods, see also https://github.com/felixgr/secure-ios-app-dev" \
+    'UnsafeCollection' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'UnsafeCollection' \
+    "2_ios_UnsafeCollection.txt"
+    
 fi
 
 #Python language specific stuff
@@ -3802,6 +4000,48 @@ if [ "$DO_GENERAL" = "true" ]; then
     "3_general_sql_delete.txt" \
     "-i"
     
+    search "SQL CREATE LOGIN statement" \
+    'CREATE LOGIN loginName' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "CREATE LOGIN" \
+    "2_general_sql_create_login.txt" \
+    "-i"
+    
+    search "SQL PWDCOMPARE statement" \
+    'SELECT PWDCOMPARE("pass", CAST(LOGINPROPERTY("username", "passwordshash")))....' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "PWDCOMPARE\(" \
+    "2_general_sql_pwdcompare.txt" \
+    "-i"
+    
+    search "SQL LOGINPROPERTY statement" \
+    'SELECT LOGINPROPERTY("username", "passwordshash");' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "LOGINPROPERTY\(" \
+    "2_general_sql_loginproperty.txt" \
+    "-i"
+    
+    search "MSSQL sp_addlogin statement" \
+    'EXEC sp_addlogin @loginame = "username", @passwd = 0x00000000000000000000000000000,@defdb = "DBNAME",@encryptopt = "skip_encryption";' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "sp_addlogin" \
+    "2_general_sql_sp_addlogin.txt" \
+    "-i"
+    
+    search "MSSQL WITH PASSWORD statement" \
+    'CREATE LOGIN [USERNAME] WITH PASSWORD = 0x000000000000000000000 HASHED, SID =' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "WITH PASSWORD =" \
+    "2_general_sql_with_password.txt" \
+    "-i"
+    
+    search "MSSQL rmtpassword attribute" \
+    'EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname = N"Instance",@useself = N"False",@locallogin = NULL,@rmtuser = N"USERNAME",@rmtpassword = "pass";' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "@rmtpassword" \
+    "2_general_sql_rmtpassword.txt" \
+    "-i"
+    
     search "SQL SQLITE" \
     'sqlite' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -3823,13 +4063,14 @@ if [ "$DO_GENERAL" = "true" ]; then
     "3_general_sql_sqlcipher.txt" \
     "-i"
     
+    #TODO: These regexes can take waaaay too long sometimes, improve performance
     #As the following regex had way too many false positives (thousands of english words match), we require the base64 to include
     #at least one equal sign at the end. The old regex was:
     #'(?:[A-Za-z0-9_-]{4})+(?:[A-Za-z0-9_-]{2}==|[A-Za-z0-9_-]{3}=)'
     search "Base64 encoded data (that is more than 6 bytes long). This regex won't detect a base64 encoded value over several lines and won't detect one that does not end with an equal sign..." \
     'YWJj YScqKyo6LV/Dpw==' \
     '/target/ //JQLite - the following ones shouldnt be an issue anymore as we require more than 6 bytes: done echo else gen/ ////' \
-    '(?:[A-Za-z0-9+/]{4})+(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)' \
+    '(?:[A-Za-z0-9+/]{4}){2,}(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)' \
     "4_general_base64_content.txt"
     #case sensitive, the regex is insensitive anyway
     
@@ -3839,7 +4080,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     search "Base64 URL-safe encoded data (that is more than 6 bytes long). To get from URL-safe base64 to regular base64 you need .replace('-','+').replace('_','/'). This regex won't detect a base64 encoded value over several lines and won't detect one that does not end with an equal sign..." \
     'YScqKyo6LV_Dpw==' \
     '/target/ //JQLite - the following ones shouldnt be an issue anymore as we require more than 6 bytes: done echo else gen/ ////' \
-    '(?:[A-Za-z0-9_-]{4})+(?:[A-Za-z0-9_-]{2}==|[A-Za-z0-9_-]{3}=)' \
+    '(?:[A-Za-z0-9_-]{4}){2,}(?:[A-Za-z0-9_-]{2}==|[A-Za-z0-9_-]{3}=)' \
     "4_general_base64_urlsafe.txt"
     #case sensitive, the regex is insensitive anyway
     

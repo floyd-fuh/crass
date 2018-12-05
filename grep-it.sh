@@ -28,7 +28,7 @@
 # Default output is optimised to be viewed with "less -R ./grep-output/*" and then you can hop from one file to the next with :n
 # and :p. The cat command works fine. If you want another editor you should probably remove --color=always and other grep arguments
 # Output files have the following naming conventions (separated by underscore):
-# - priority: 1-5, where 1 is more interesting (low false positive rate, certainty of "vulnerability") and 5 is only "you might want to have a look"
+# - priority: 1-9, where 1 is more interesting (low false positive rate, certainty of "vulnerability") and 9 is only "you might want to have a look when you are desperately looking for vulns"
 # - section: eg. java or php
 # - name of what we looked for
 #
@@ -280,96 +280,103 @@ if [ "$DO_JAVA" = "true" ]; then
     'String bla = "This is a Java String";' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '"[^"]{4,500}"' \
-    "5_java_strings.txt" \
+    "9_java_strings.txt" \
     "-o" #Special case, we only want to show the strings themselves, therefore -o to output the match only
     
     search "All javax.crypto usage" \
     'import javax.crypto.bla;' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'javax.crypto' \
-    "4_java_crypto_javax-crypto.txt"
+    "7_java_crypto_javax-crypto.txt"
     
     search "Bouncycastle is a common Java crypto provider" \
     'import org.bouncycastle.bla;' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "bouncy.{0,$WILDCARD_SHORT}castle" \
-    "4_java_crypto_bouncycastle.txt" \
+    "7_java_crypto_bouncycastle.txt" \
     "-i"
     
     search "SecretKeySpec is used to initialize a new encryption key: instance of SecretKey, often passed in the first argument as a byte[], which is the actual key" \
     'new SecretKeySpec(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'new\sSecretKeySpec\(' \
-    "1_java_crypto_new-SecretKeySpec.txt" \
+    "2_java_crypto_new-SecretKeySpec.txt" \
+    "-i"
+    
+    search "PBEKeySpec(\" is used to initialize a new encryption key: instance of PBEKeySpec, often passed in the first argument as a byte[] like \"foobar\".getBytes(), which is the actual key. I leave this here for your amusement: https://github.com/wso2/wso2-synapse/blob/master/modules/securevault/src/main/java/org/apache/synapse/securevault/secret/handler/JBossEncryptionSecretCallbackHandler.java#L40 " \
+    'new PBEKeySpec("foobar".getBytes());' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'new\sPBEKeySpec\("' \
+    "2_java_crypto_new-PBEKeySpec_str.txt" \
     "-i"
     
     search "PBEKeySpec( is used to initialize a new encryption key: instance of PBEKeySpec, often passed in the first argument as a byte[], which is the actual key" \
     'new PBEKeySpec(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'new\sPBEKeySpec\(' \
-    "1_java_crypto_new-PBEKeySpec.txt" \
+    "3_java_crypto_new-PBEKeySpec.txt" \
     "-i"
     
     search "GenerateKey is another form of making a new instance of SecretKey, depending on the use case randomly generates one on the fly. It's interesting to see where the key goes next, where it's stored or accidentially written to a log file." \
     '.generateKey()' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.generateKey\(' \
-    "2_java_crypto_generateKey.txt"
+    "3_java_crypto_generateKey.txt"
     
     search "Occurences of KeyGenerator.getInstance(ALGORITHM) it's interesting to see where the key goes next, where it's stored or accidentially written to a log file. Make sure the cipher is secure." \
     'KeyGenerator.getInstance(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'KeyGenerator\.getInstance\(' \
-    "2_java_crypto_keygenerator-getinstance.txt"
+    "4_java_crypto_keygenerator-getinstance.txt"
     
     search "Occurences of Cipher.getInstance(ALGORITHM) it's interesting to see where the key goes next, where it's stored or accidentially written to a log file. Make sure the cipher is secure." \
     'Cipher.getInstance("RSA/NONE/NoPadding");' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'Cipher\.getInstance\(' \
-    "2_java_crypto_cipher_getInstance.txt"
+    "4_java_crypto_cipher_getInstance.txt"
     
     search "The Random class shouldn't be used for crypthography in Java, the SecureRandom should be used instead." \
     'Random random = new Random();' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'new Random\(' \
-    "2_java_crypto_random.txt"
+    "5_java_crypto_random.txt"
     
     search "The Math.random class shouldn't be used for crypthography in Java, the SecureRandom should be used instead." \
     'Math.random();' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'Math.random\(' \
-    "2_java_math_random.txt"
+    "5_java_math_random.txt"
     
     search "Message digest is used to generate hashes" \
     'messagedigest' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'messagedigest' \
-    "2_java_crypto_messagedigest.txt" \
+    "4_java_crypto_messagedigest.txt" \
     "-i"
     
     search "KeyPairGenerator, well, to generate key pairs, see http://docs.oracle.com/javase/7/docs/api/java/security/KeyPairGenerator.html . It's interesting to see where the key goes next, where it's stored or accidentially written to a log file." \
     'KeyPairGenerator(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'KeyPairGenerator\(' \
-    "1_java_crypto_keypairgenerator.txt"
+    "4_java_crypto_keypairgenerator.txt"
     
     search "String comparisons have to be done with .equals() in Java, not with == (won't work). Attention: False positives often occur if you used a decompiler to get the Java code, additionally it's allowed in JavaScript." \
     '    toString(  )    ==' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "toString\(\s{0,$WILDCARD_SHORT}\)\s{0,$WILDCARD_SHORT}==" \
-    "4_java_string_comparison1.txt"
+    "8_java_string_comparison1.txt"
     
     search "String comparisons have to be done with .equals() in Java, not with == (won't work). Attention: False positives often occur if you used a decompiler to get the Java code, additionally it's allowed in JavaScript." \
     ' ==     toString() ' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "==\s{0,$WILDCARD_SHORT}toString\(\s{0,$WILDCARD_SHORT}\)" \
-    "4_java_string_comparison2.txt"
+    "8_java_string_comparison2.txt"
     
     search "String comparisons have to be done with .equals() in Java, not with == (won't work). Attention: False positives often occur if you used a decompiler to get the Java code, additionally it's allowed in JavaScript." \
     ' ==     "' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "==\s{0,$WILDCARD_SHORT}\"" \
-    "4_java_string_comparison3.txt"
+    "8_java_string_comparison3.txt"
     
     search "Problem with equals and equalsIgnoreCase for checking user supplied passwords or Hashes or HMACs or XYZ is that it is not a time-consistent method, therefore allowing timing attacks." \
     '.equals(hash_from_request)' \
@@ -387,110 +394,109 @@ if [ "$DO_JAVA" = "true" ]; then
     '.equals(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'equals\(' \
-    "4_java_string_comparison_equals.txt"
+    "6_java_string_comparison_equals.txt"
     
     search "String comparisons: Filters and conditional decisions on user input should better be done with .equalsIgnoreCase() in Java in most cases, so that the clause doesn't miss something (e.g. think about string comparison in filters) or long switch case. Another problem with equals and equalsIgnoreCase for checking user supplied passwords or Hashes or HMACs or XYZ is that it is not a time-consistent method, therefore allowing timing attacks." \
     '.equalsIgnoreCase(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'equalsIgnoreCase\(' \
-    "4_java_string_comparison_equalsIgnoreCase.txt"
+    "6_java_string_comparison_equalsIgnoreCase.txt"
     
     search "The syntax for SQL executions start with execute and this should as well catch generic execute calls." \
     'executeBlaBla(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "execute.{0,$WILDCARD_SHORT}\(" \
-    "3_java_sql_execute.txt"
+    "5_java_sql_execute.txt"
     
     search "SQL syntax" \
     'addBatch(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "addBatch\(" \
-    "3_java_sql_addBatch.txt"
+    "5_java_sql_addBatch.txt"
     
     search "SQL prepared statements, can go wrong if you prepare after you use user supplied input in the query syntax..." \
     'prepareStatement(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "prepareStatement\(" \
-    "2_java_sql_prepareStatement.txt"
+    "5_java_sql_prepareStatement.txt"
     
     search "Method to set HTTP headers in Java" \
     '.setHeader(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.setHeader\(" \
-    "3_java_http_setHeader.txt"
+    "4_java_http_setHeader.txt"
     
     search "Method to set HTTP headers in Java" \
     '.addCookie(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.addCookie\(" \
-    "3_java_http_addCookie.txt"
+    "5_java_http_addCookie.txt"
         
     search "Method to send HTTP redirect in Java" \
     '.sendRedirect(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.sendRedirect\(" \
-    "3_java_http_sendRedirect.txt"
+    "4_java_http_sendRedirect.txt"
     
     search "Java add HTTP header" \
     '.addHeader(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.addHeader\(" \
-    "3_java_http_addHeader.txt"
+    "4_java_http_addHeader.txt"
     
     search "Java get HTTP header" \
     '.getHeaders(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.getHeaders\(" \
-    "3_java_http_getHeaders.txt"
+    "4_java_http_getHeaders.txt"
     
     search "Java get HTTP cookies" \
     '.getCookies(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.getCookies\(" \
-    "3_java_http_getCookies.txt"
+    "4_java_http_getCookies.txt"
     
     search "Java get remote host" \
     '.getRemoteHost(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.getRemoteHost\(" \
-    "3_java_http_getRemoteHost.txt"
+    "4_java_http_getRemoteHost.txt"
     
     search "Java get remote user" \
     '.getRemoteUser(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.getRemoteUser\(" \
-    "3_java_http_getRemoteUser.txt"
+    "4_java_http_getRemoteUser.txt"
     
     search "Java is secure" \
     '.isSecure(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.isSecure\(" \
-    "3_java_http_isSecure.txt"
+    "4_java_http_isSecure.txt"
     
     search "Java get requested session ID" \
     '.getRequestedSessionId(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.getRequestedSessionId\(" \
-    "3_java_http_getRequestedSessionId.txt"
-    
+    "4_java_http_getRequestedSessionId.txt"
         
     search "Java get content type" \
     '.getContentType(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.getContentType\(" \
-    "3_java_http_getContentType.txt"
+    "5_java_http_getContentType.txt"
     
     search "Java HTTP or XML local name" \
     '.getLocalName(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.getLocalName\(" \
-    "3_java_http_getLocalName.txt"
+    "5_java_http_getLocalName.txt"
     
     search "Java generic parameter fetching" \
     '.getParameterBlabla(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.getParameter.{0,$WILDCARD_SHORT}\(" \
-    "3_java_http_getParameter.txt"
+    "6_java_http_getParameter.txt"
     
     search "Potential tainted input in string format." \
     'String.format("bla-%s"+taintedInput, variable);' \
@@ -502,13 +508,13 @@ if [ "$DO_JAVA" = "true" ]; then
     'String.format(variable)' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "String\.format\(\s{0,$WILDCARD_SHORT}[^\"]" \
-    "3_java_format_string2.txt"
+    "4_java_format_string2.txt"
     
     search "Java ProcessBuilder" \
     'ProcessBuilder' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'ProcessBuilder' \
-    "2_java_ProcessBuilder.txt" \
+    "5_java_ProcessBuilder.txt" \
     "-i"
     
     search "HTTP session timeout" \
@@ -522,7 +528,7 @@ if [ "$DO_JAVA" = "true" ]; then
     '@Entity' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '@Entity|@ManyToOne|@OneToMany|@OneToOne|@Table|@Column' \
-    "3_java_persistent_beans.txt" \
+    "6_java_persistent_beans.txt" \
     "-l" #Special case, we only want to know matching files to know which beans get persisted, therefore -l to output matching files
     
     #Take care with the following regex, @ has a special meaning in double quoted strings, but not in single quoted strings
@@ -530,230 +536,253 @@ if [ "$DO_JAVA" = "true" ]; then
     '@Column(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '@Column\(' \
-    "3_java_persistent_columns_in_database.txt"
+    "5_java_persistent_columns_in_database.txt"
     
     #Take care with the following regex, @ has a special meaning in double quoted strings, but not in single quoted strings
     search "The source code shows the database table/column names... e.g. if you find a sql injection later on, this will help for the exploitation" \
     '@Table(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '@Table\(' \
-    "3_java_persistent_tables_in_database.txt"
+    "5_java_persistent_tables_in_database.txt"
     
     search "Find out which Java classes do any kind of io" \
     'java.net.' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'java\.net\.' \
-    "4_java_io_java_net.txt" \
+    "7_java_io_java_net.txt" \
     "-l" #Special case, we only want to know matching files to know which beans get persisted, therefore -l to output matching files
     
     search "Find out which Java classes do any kind of io" \
     'java.io.' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'java\.io\.' \
-    "4_java_io_java_io.txt" \
+    "7_java_io_java_io.txt" \
     "-l" #Special case, we only want to know matching files to know which beans get persisted, therefore -l to output matching files
     
     search "Find out which Java classes do any kind of io" \
     'javax.servlet' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'javax\.servlet' \
-    "4_java_io_javax_servlet.txt" \
+    "7_java_io_javax_servlet.txt" \
     "-l" #Special case, we only want to know matching files to know which beans get persisted, therefore -l to output matching files
     
     search "Find out which Java classes do any kind of io" \
     'org.apache.http' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'org\.apache\.http' \
-    "4_java_io_apache_http.txt" \
+    "7_java_io_apache_http.txt" \
     "-l" #Special case, we only want to know matching files to know which beans get persisted, therefore -l to output matching files
     
     search "Especially for high security applications. From http://docs.oracle.com/javase/1.5.0/docs/guide/security/jce/JCERefGuide.html#PBEEx : \"It would seem logical to collect and store the password in an object of type java.lang.String. However, here's the caveat: Objects of type String are immutable, i.e., there are no methods defined that allow you to change (overwrite) or zero out the contents of a String after usage. This feature makes String objects unsuitable for storing security sensitive information such as user passwords. You should always collect and store security sensitive information in a char array instead.\" " \
     'String password' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "string .{0,$WILDCARD_SHORT}password" \
-    "4_java_confidential_data_in_strings_password.txt" \
+    "6_java_confidential_data_in_strings_password.txt" \
     "-i"
     
     search "Especially for high security applications. From http://docs.oracle.com/javase/1.5.0/docs/guide/security/jce/JCERefGuide.html#PBEEx : \"It would seem logical to collect and store the password in an object of type java.lang.String. However, here's the caveat: Objects of type String are immutable, i.e., there are no methods defined that allow you to change (overwrite) or zero out the contents of a String after usage. This feature makes String objects unsuitable for storing security sensitive information such as user passwords. You should always collect and store security sensitive information in a char array instead.\" " \
     'String secret' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "string .{0,$WILDCARD_SHORT}secret" \
-    "4_java_confidential_data_in_strings_secret.txt" \
+    "6_java_confidential_data_in_strings_secret.txt" \
     "-i"
     
     search "Especially for high security applications. From http://docs.oracle.com/javase/1.5.0/docs/guide/security/jce/JCERefGuide.html#PBEEx : \"It would seem logical to collect and store the password in an object of type java.lang.String. However, here's the caveat: Objects of type String are immutable, i.e., there are no methods defined that allow you to change (overwrite) or zero out the contents of a String after usage. This feature makes String objects unsuitable for storing security sensitive information such as user passwords. You should always collect and store security sensitive information in a char array instead.\" " \
     'String key' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "string .{0,$WILDCARD_SHORT}key" \
-    "4_java_confidential_data_in_strings_key.txt" \
+    "6_java_confidential_data_in_strings_key.txt" \
     "-i"
     
     search "Especially for high security applications. From http://docs.oracle.com/javase/1.5.0/docs/guide/security/jce/JCERefGuide.html#PBEEx : \"It would seem logical to collect and store the password in an object of type java.lang.String. However, here's the caveat: Objects of type String are immutable, i.e., there are no methods defined that allow you to change (overwrite) or zero out the contents of a String after usage. This feature makes String objects unsuitable for storing security sensitive information such as user passwords. You should always collect and store security sensitive information in a char array instead.\" " \
     'String cvv' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "string .{0,$WILDCARD_SHORT}cvv" \
-    "4_java_confidential_data_in_strings_cvv.txt" \
+    "6_java_confidential_data_in_strings_cvv.txt" \
     "-i"
     
     search "Especially for high security applications. From http://docs.oracle.com/javase/1.5.0/docs/guide/security/jce/JCERefGuide.html#PBEEx : \"It would seem logical to collect and store the password in an object of type java.lang.String. However, here's the caveat: Objects of type String are immutable, i.e., there are no methods defined that allow you to change (overwrite) or zero out the contents of a String after usage. This feature makes String objects unsuitable for storing security sensitive information such as user passwords. You should always collect and store security sensitive information in a char array instead.\" " \
     'String user' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "string .{0,$WILDCARD_SHORT}user" \
-    "4_java_confidential_data_in_strings_user.txt" \
+    "6_java_confidential_data_in_strings_user.txt" \
     "-i"
     
     search "Especially for high security applications. From http://docs.oracle.com/javase/1.5.0/docs/guide/security/jce/JCERefGuide.html#PBEEx : \"It would seem logical to collect and store the password in an object of type java.lang.String. However, here's the caveat: Objects of type String are immutable, i.e., there are no methods defined that allow you to change (overwrite) or zero out the contents of a String after usage. This feature makes String objects unsuitable for storing security sensitive information such as user passwords. You should always collect and store security sensitive information in a char array instead.\" " \
     'String passcode' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "string .{0,$WILDCARD_SHORT}passcode" \
-    "4_java_confidential_data_in_strings_passcode.txt" \
+    "6_java_confidential_data_in_strings_passcode.txt" \
     "-i"
     
     search "Especially for high security applications. From http://docs.oracle.com/javase/1.5.0/docs/guide/security/jce/JCERefGuide.html#PBEEx : \"It would seem logical to collect and store the password in an object of type java.lang.String. However, here's the caveat: Objects of type String are immutable, i.e., there are no methods defined that allow you to change (overwrite) or zero out the contents of a String after usage. This feature makes String objects unsuitable for storing security sensitive information such as user passwords. You should always collect and store security sensitive information in a char array instead.\" " \
     'String passphrase' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "string .{0,$WILDCARD_SHORT}passphrase" \
-    "4_java_confidential_data_in_strings_passphrase.txt" \
+    "6_java_confidential_data_in_strings_passphrase.txt" \
     "-i"
     
     search "Especially for high security applications. From http://docs.oracle.com/javase/1.5.0/docs/guide/security/jce/JCERefGuide.html#PBEEx : \"It would seem logical to collect and store the password in an object of type java.lang.String. However, here's the caveat: Objects of type String are immutable, i.e., there are no methods defined that allow you to change (overwrite) or zero out the contents of a String after usage. This feature makes String objects unsuitable for storing security sensitive information such as user passwords. You should always collect and store security sensitive information in a char array instead.\" " \
     'String pin' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "string .{0,$WILDCARD_SHORT}pin" \
-    "4_java_confidential_data_in_strings_pin.txt" \
+    "6_java_confidential_data_in_strings_pin.txt" \
     "-i"
     
     search "Especially for high security applications. From http://docs.oracle.com/javase/1.5.0/docs/guide/security/jce/JCERefGuide.html#PBEEx : \"It would seem logical to collect and store the password in an object of type java.lang.String. However, here's the caveat: Objects of type String are immutable, i.e., there are no methods defined that allow you to change (overwrite) or zero out the contents of a String after usage. This feature makes String objects unsuitable for storing security sensitive information such as user passwords. You should always collect and store security sensitive information in a char array instead.\" " \
     'String creditcard_number' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "string .{0,$WILDCARD_SHORT}credit" \
-    "4_java_confidential_data_in_strings_credit.txt" \
+    "6_java_confidential_data_in_strings_credit.txt" \
     "-i"
     
     search "Attention: SSLSocketFactory means in general you will skip SSL hostname verification because the SSLSocketFactory can't know which protocol (HTTP/LDAP/etc.) and therefore can't lookup the hostname. Even Apache's HttpClient version 3 for Java is broken: see https://crypto.stanford.edu/~dabo/pubs/abstracts/ssl-client-bugs.html" \
     'SSLSocketFactory' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'SSLSocketFactory' \
-    "3_java_SSLSocketFactory.txt"
+    "5_java_SSLSocketFactory.txt"
     
     search "It's very easy to construct a backdoor in Java with Unicode \u characters, even within multi line comments, see http://pastebin.com/iGQhuUGd and https://plus.google.com/111673599544007386234/posts/ZeXvRCRZ3LF ." \
     '\u0041\u0042' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\\u00..\\u00..' \
-    "4_java_backdoor_as_unicode.txt" \
+    "8_java_backdoor_as_unicode.txt" \
     "-i"
     
     search "CheckValidity method of X509Certificate in Java is a very confusing naming for developers new to SSL/TLS and has been used as the *only* check to see if a certificate is valid or not in the past. This method *only* checks the date-validity, see http://docs.oracle.com/javase/7/docs/api/java/security/cert/X509Certificate.html#checkValidity%28%29 : 'Checks that the certificate is currently valid. It is if the current date and time are within the validity period given in the certificate.'" \
     'paramArrayOfX509Certificate[0].checkValidity(); return;' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.checkValidity\(" \
-    "2_java_ssl_checkValidity.txt"
+    "3_java_ssl_checkValidity.txt"
     
     search "CheckServerTrusted, often used for certificate pinning on Java and Android, however, this is very very often insecure and not effective, see https://www.cigital.com/blog/ineffective-certificate-pinning-implementations/ . The correct method is to replace the system's TrustStore." \
     'checkServerTrusted(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "checkServerTrusted\(" \
-    "2_java_checkServerTrusted.txt"
+    "3_java_checkServerTrusted.txt"
     
     search "getPeerCertificates, often used for certificate pinning on Java and Android, however, this is very very often insecure and not effective, see https://www.cigital.com/blog/ineffective-certificate-pinning-implementations/ . The correct method is to replace the system's TrustStore." \
     'getPeerCertificates(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "getPeerCertificates\(" \
-    "2_java_getPeerCertificates.txt"
+    "3_java_getPeerCertificates.txt"
     
     search "getPeerCertificateChain, often used for certificate pinning on Java and Android, however, this is very very often insecure and not effective, see https://www.cigital.com/blog/ineffective-certificate-pinning-implementations/ . The correct method is to replace the system's TrustStore." \
     'getPeerCertificateChain(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "getPeerCertificateChain\(" \
-    "2_java_getPeerCertificateChain.txt"
+    "3_java_getPeerCertificateChain.txt"
     
     search "A simple search for getRuntime(), which is often used later on for .exec()" \
     'getRuntime()' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'getRuntime\(' \
-    "3_java_getruntime.txt"
+    "6_java_getruntime.txt"
     
     search "A simple search for getRuntime().exec()" \
     'getRuntime().exec()' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'getRuntime\(\)\.exec\(' \
-    "2_java_runtime_exec_1.txt"
+    "5_java_runtime_exec_1.txt"
     
     search "A search for Process p = r.exec()" \
     'Process p = r.exec(args1);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "Process.{0,$WILDCARD_SHORT}\.exec\(" \
-    "2_java_runtime_exec_2.txt"
+    "5_java_runtime_exec_2.txt"
     
     search "The function openProcess is included in apache commons and does a getRuntime().exec" \
     'p = openProcess(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "openProcess\(" \
-    "2_java_apache_common_openProcess.txt"
+    "6_java_apache_common_openProcess.txt"
     
     search "Validation in Java can be done via javax.validation. " \
     'import javax.validation.bla;' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "javax.validation" \
-    "2_java_javax-validation.txt"
+    "4_java_javax-validation.txt"
     
     #Take care with the following regex, @ has a special meaning in double quoted strings, but not in single quoted strings
     search 'Validation in Java can be done via certain @constraint' \
     '@constraint' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '@constraint' \
-    "2_java_constraint_annotation.txt"
+    "4_java_constraint_annotation.txt"
     
     #Take care with the following regex, @ has a special meaning in double quoted strings, but not in single quoted strings
     search 'Lint will sometimes complain about security related stuff, this annotation deactivates the warning' \
     '@SuppressLint' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '@SuppressLint' \
-    "2_java_suppresslint.txt"
+    "5_java_suppresslint.txt"
     
     search 'Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ and https://github.com/mbechler/marshalsec for example' \
     'new ObjectOutputStream(abc);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'new ObjectOutputStream' \
-    "2_java_serialization-objectOutputStream.txt"
+    "4_java_serialization-objectOutputStream.txt"
     
     search 'Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ and https://github.com/mbechler/marshalsec for example' \
     'abc.writeObject(def);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.writeObject\(' \
-    "2_java_serialization-writeObject.txt"
+    "4_java_serialization-writeObject.txt"
     
     search 'Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ and https://github.com/mbechler/marshalsec for example' \
     'abc.readObject(def);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.readObject\(' \
-    "1_java_serialization-readObject.txt"
-    
+    "6_java_serialization-readObject.txt"
+        
     search 'Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ and https://github.com/mbechler/marshalsec for example' \
     ' @SerializedName("variableName")' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '@SerializedName\(' \
-    "2_java_serialization-SerializedName.txt"
+    "4_java_serialization-SerializedName.txt"
     
+    search 'Deserialization is something that can result in remote command execution, readResolve is a one of the Java APIs' \
+    '.readResolve(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.readResolve\(' \
+    "4_java_serialization-readResolve.txt"
+    
+    search 'Deserialization is something that can result in remote command execution, readExternal is a one of the Java APIs' \
+    '.readExternal(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.readExternal\(' \
+    "4_java_serialization-readExternal.txt"
+    
+    search 'Deserialization is something that can result in remote command execution, readUnshared is a one of the Java APIs' \
+    '.readUnshared(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.readUnshared\(' \
+    "4_java_serialization-readUnshared.txt"
+    
+    search 'Deserialization is something that can result in remote command execution, XStream is a one of the Java APIs' \
+    'XStream(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'XStream' \
+    "4_java_serialization-XStream.txt"
     
     search 'Java serialized data? Usually Java serialized data in base64 format starts with rO0 or non-base64 with hex ACED0005. Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ and https://github.com/mbechler/marshalsec for example' \
     'rO0ABXNyABpodWRzb24ucmVtb3RpbmcuQ2FwYWJpbGl0eQAAAAAAAAABAgABSgAEbWFza3hwAAAAAAAAAJP4=' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'rO0' \
-    "2_java_serialization-base64serialized-data.txt"
+    "3_java_serialization-base64serialized-data.txt"
     
     search 'Java serialized data? Usually Java serialized data in base64 format starts with rO0 or non-base64 with hex ACED0005. Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ and https://github.com/mbechler/marshalsec for example' \
     'ACED0005' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'AC ?ED ?00 ?05' \
-    "2_java_serialization-hexserialized-data.txt" \
+    "3_java_serialization-hexserialized-data.txt" \
     "-i"
     
     search 'Java serialized data? Usually Java serialized data in base64 format starts with rO0 or non-base64 with hex ACED0005. Decidezation is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ and https://github.com/mbechler/marshalsec for example' \
     '\xAC\xED\x00\x05' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\\xAC\\xED\\x00\\x05' \
-    "2_java_serialization-serialized-data.txt"
+    "3_java_serialization-serialized-data.txt"
     
     search 'JMXInvokerServlet is a JBoss interface that is usually vulnerable to Java deserialization attacks. There are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ and https://github.com/mbechler/marshalsec for example' \
     'JMXInvokerServlet' \
@@ -771,7 +800,7 @@ if [ "$DO_JAVA" = "true" ]; then
     'File.createTempFile();' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.createTempFile\(' \
-    "3_java_createTempFile.txt"
+    "6_java_createTempFile.txt"
     
     search 'HttpServletRequest.getRequestedSessionId returns the session ID requested by the client in the HTTP cookie header, not the one set by the server, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
     'HttpServletRequest.getRequestedSessionId();' \
@@ -795,19 +824,19 @@ if [ "$DO_JAVA" = "true" ]; then
     'meth.invoke(obj, ...);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.invoke\(' \
-    "3_java_invoke.txt"
+    "4_java_invoke.txt"
     
     search 'New cookie should automatically be followed by c.setSecure(true); to make sure the secure flag ist set, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
     'Cookie c = new Cookie(a, b);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'new\sCookie\(' \
-    "3_java_new_cookie.txt"
+    "4_java_new_cookie.txt"
     
     search 'Servlet methods that throw exceptions might reveal sensitive information, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
     'public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "void do.{0,$WILDCARD_LONG}throws.{0,$WILDCARD_LONG}ServletException" \
-    "3_java_servlet_exception.txt"
+    "4_java_servlet_exception.txt"
     
     search 'Security decisions should not be done based on the HTTP referer header as it is attacker chosen, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
     'String referer = request.getHeader("referer");' \
@@ -819,38 +848,38 @@ if [ "$DO_JAVA" = "true" ]; then
     'MyCryptographicAlgorithm extends MessageDigest {' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "extends.{0,$WILDCARD_LONG}MessageDigest" \
-    "3_java_extends_MessageDigest.txt"
+    "4_java_extends_MessageDigest.txt"
     
     search 'Usually it is a bad idea to subclass cryptographic implementation, developers might break the implementation, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=java' \
     'MyCryptographicAlgorithm extends WhateverCipher {' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "extends.{0,$WILDCARD_LONG}cipher" \
-    "3_java_extends_cipher.txt" \
+    "4_java_extends_cipher.txt" \
     "-i"
     
     search "printStackTrace logs and should not be in production (also logs to Android log), information leakage, etc." \
     '.printStackTrace()' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.printStackTrace\(' \
-    "3_java_printStackTrace.txt"
+    "6_java_printStackTrace.txt"
     
     search "setAttribute is usually used to set an attribute of a session object, untrusted data should not be added to a session object" \
     'session.setAttribute("abc", untrusted_input);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.setAttribute\(' \
-    "3_java_setAttribute.txt"
+    "5_java_setAttribute.txt"
     
     search "StreamTokenizer, look for parsing errors, see https://docs.oracle.com/javase/7/docs/api/java/io/StreamTokenizer.html" \
     'StreamTokenizer' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'StreamTokenizer' \
-    "3_java_StreamTokenizer.txt"
+    "5_java_StreamTokenizer.txt"
     
     search "getResourceAsStream, see http://docs.oracle.com/javase/7/docs/api/java/lang/Class.html#getResourceAsStream(java.lang.String)" \
     'getResourceAsStream' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'getResourceAsStream' \
-    "3_java_getResourceAsStream.txt"
+    "5_java_getResourceAsStream.txt"
     
     
 fi
@@ -864,32 +893,32 @@ if [ "$DO_JSP" = "true" ]; then
     '.sendRedirect(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.sendRedirect\(' \
-    "2_java_jsp_redirect.txt"
+    "4_java_jsp_redirect.txt"
     
     search "JSP redirect" \
     '.forward(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.forward\(' \
-    "2_java_jsp_forward_1.txt"
+    "4_java_jsp_forward_1.txt"
     
     search "JSP redirect" \
     ':forward' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     ':forward' \
-    "2_java_jsp_forward_2.txt"
+    "4_java_jsp_forward_2.txt"
     
     search "Can introduce XSS" \
     'escape=false' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "escape\s{0,$WILDCARD_SHORT}=\s{0,$WILDCARD_SHORT}'?\"?\s{0,$WILDCARD_SHORT}false" \
-    "1_java_jsp_xss_escape.txt" \
+    "2_java_jsp_xss_escape.txt" \
     "-i"
     
     search "Can introduce XSS" \
     'escapeXml=false' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "escapeXml\s{0,$WILDCARD_SHORT}=\s{0,$WILDCARD_SHORT}'?\"?\s{0,$WILDCARD_SHORT}false" \
-    "1_java_jsp_xss_escapexml.txt" \
+    "2_java_jsp_xss_escapexml.txt" \
     "-i"
     
     search "Can introduce XSS when simply writing a bean property to HTML without escaping. Attention: there are now client-side JavaScript libraries using the same tags for templates!" \
@@ -903,7 +932,7 @@ if [ "$DO_JSP" = "true" ]; then
     '.getParameter(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.getParameter\(" \
-    "3_java_jsp_property_to_html_xss.txt" \
+    "4_java_jsp_property_to_html_xss.txt" \
     "-i"
     
     search "Can introduce XSS when simply writing a bean property to HTML without escaping." \
@@ -917,7 +946,7 @@ if [ "$DO_JSP" = "true" ]; then
     '<s:file test' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "<s:file\s" \
-    "1_java_jsp_file_upload.txt" \
+    "3_java_jsp_file_upload.txt" \
     "-i"
 fi
 
@@ -930,10 +959,10 @@ if [ "$DO_SPRING" = "true" ]; then
     'DataBinder.setAllowedFields' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'DataBinder\.setAllowedFields' \
-    "2_java_spring_mass_assignment.txt" \
+    "3_java_spring_mass_assignment.txt" \
     "-i"
     
-    search "stripUnsafeHTML, method of the Spring Surf Framework can introduce thinks like XSS, because it is not really protecting." \
+    search "stripUnsafeHTML, method of the Spring Surf Framework can introduce things like XSS, because it is not really protecting." \
     'stripUnsafeHTML' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'stripUnsafeHTML' \
@@ -951,13 +980,13 @@ if [ "$DO_SPRING" = "true" ]; then
     '@RequestMapping(method=RequestMethod.GET, value={"/user","/user/{id}"})' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '@RequestMapping\(' \
-    "3_java_spring_requestMapping.txt"
+    "4_java_spring_requestMapping.txt"
     
     search "ServletMapping XML of the Spring Surf Framework to see how request URLs are mapped to classes." \
     '<servlet-mapping><servlet-name>spring</servlet-name><url-pattern>*.html</url-pattern><url-pattern>/gallery/*</url-pattern><url-pattern>/galleryupload/*</url-pattern>' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '<servlet-mapping>' \
-    "3_java_spring_servletMapping.txt"
+    "4_java_spring_servletMapping.txt"
     
     
 fi
@@ -971,14 +1000,14 @@ if [ "$DO_STRUTS" = "true" ]; then
     'validate  =  "false' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "validate\s{0,$WILDCARD_SHORT}=\s{0,$WILDCARD_SHORT}'?\"?false" \
-    "1_java_struts_deactivated_validation.txt" \
+    "2_java_struts_deactivated_validation.txt" \
     "-i"
     
     search "see e.g. http://erpscan.com/press-center/struts2-devmode-rce-with-metasploit-module/" \
     'struts.devMode' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "struts\.devMode" \
-    "1_java_struts_devMode.txt" \
+    "2_java_struts_devMode.txt" \
     "-i"
 fi
 
@@ -1012,7 +1041,7 @@ if [ "$DO_FLEX" = "true" ]; then
     'trace("output:" + value);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'trace\(' \
-    "3_flex_trace.txt"
+    "5_flex_trace.txt"
     
     search 'ExactSettings to false makes cross-domain attacks possible, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=flex' \
     'Security.exactSettings = false;' \
@@ -1102,7 +1131,7 @@ if [ "$DO_DOTNET" = "true" ]; then
     'ObjectInputStream' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "ObjectInputStream" \
-    "3_dotnet_ObjectInputStream.txt"
+    "4_dotnet_ObjectInputStream.txt"
     
     search "Used for IO in .NET, also one of the rules of https://www.owasp.org/index.php/Category:OWASP_Code_Crawler" \
     'pipedinputstream' \
@@ -1164,11 +1193,18 @@ if [ "$DO_DOTNET" = "true" ]; then
     "SqlClient" \
     "3_dotnet_SqlClient.txt"
     
+    search "SQL injection found in a web application the wild: Using string.Format instead of SqlParameter leading to non-prepared SQL statement which is later executed" \
+    'string.Format("SELECT * FROM [a].[b] ab ORDER BY {0} {1} OFFSET {2} ROWS FETCH NEXT {3} ROWS ONLY;", new object[4]{(object) x, (object) y, (object) z, (object) u});' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "string\.Format\(.{0,$WILDCARD_SHORT}SELECT.{0,$WILDCARD_LONG}FROM" \
+    "1_dotnet_stringformat_sqli.txt" \
+    "-i"
+    
     search "SuppressUnmanagedCodeSecurityAttribute, see https://msdn.microsoft.com/en-us/library/ms182311(v=vs.80).aspx" \
     '[SuppressUnmanagedCodeSecurityAttribute()]' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "SuppressUnmanagedCodeSecurityAttribute" \
-    "3_dotnet_SuppressUnmanagedCodeSecurityAttribute.txt"
+    "2_dotnet_SuppressUnmanagedCodeSecurityAttribute.txt"
     
     search "UnmanagedCode, see https://msdn.microsoft.com/en-us/library/ms182312(v=vs.80).aspx" \
     '[SecurityPermissionAttribute(SecurityAction.Demand, UnmanagedCode=true)]' \
@@ -1207,31 +1243,31 @@ if [ "$DO_PHP" = "true" ]; then
     '$_GET' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\$_GET' \
-    "3_php_get.txt"
+    "4_php_get.txt"
     
     search "Tainted input, POST parameter" \
     '$_POST' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\$_POST' \
-    "3_php_post.txt"
+    "4_php_post.txt"
     
     search "Tainted input, cookie parameter" \
     '$_COOKIE' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\$_COOKIE' \
-    "3_php_cookie.txt"
+    "4_php_cookie.txt"
     
     search "Tainted input. Using \$_REQUEST is a bad idea in general, as that means GET/POST exchangeable and transporting sensitive information in the URL is a bad idea (see HTTP RFC -> ends up in logs, browser history, etc.)." \
     '$_REQUEST' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\$_REQUEST' \
-    "3_php_request.txt"
+    "4_php_request.txt"
     
     search "Dangerous PHP function: proc_" \
     'proc_' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'proc_' \
-    "2_php_proc.txt" \
+    "3_php_proc.txt" \
     "-i"
     
     search "Dangerous PHP function: passthru" \
@@ -1266,49 +1302,49 @@ if [ "$DO_PHP" = "true" ]; then
     'imagecreatefrom' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'imagecreatefrom' \
-    "3_php_imagecreatefrom.txt" \
+    "4_php_imagecreatefrom.txt" \
     "-i"
     
     search "Dangerous PHP function: mkdir" \
     'mkdir (' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "mkdir\s{0,$WILDCARD_SHORT}\(" \
-    "2_php_mkdir.txt" \
+    "5_php_mkdir.txt" \
     "-i"
     
     search "Dangerous PHP function: chmod" \
     'chmod (' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "chmod\s{0,$WILDCARD_SHORT}\(" \
-    "2_php_chmod.txt" \
+    "5_php_chmod.txt" \
     "-i"
     
     search "Dangerous PHP function: chown" \
     'chown (' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "chown\s{0,$WILDCARD_SHORT}\(" \
-    "2_php_chown.txt" \
+    "5_php_chown.txt" \
     "-i"
     
     search "Dangerous PHP function: file" \
     'file (' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "file\s{0,$WILDCARD_SHORT}\(" \
-    "2_php_file.txt" \
+    "7_php_file.txt" \
     "-i"
     
     search "Dangerous PHP function: link" \
     'link (' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "link\s{0,$WILDCARD_SHORT}\(" \
-    "2_php_link.txt" \
+    "4_php_link.txt" \
     "-i"
     
     search "Dangerous PHP function: rmdir" \
     'rmdir (' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "rmdir\s{0,$WILDCARD_SHORT}\(" \
-    "2_php_rmdir.txt" \
+    "5_php_rmdir.txt" \
     "-i"
     
     search "CURLOPT_SSL_VERIFYPEER should be set to TRUE, CURLOPT_SSL_VERIFYHOST should be set to 2, if there is a mixup, this can go really wrong. See https://crypto.stanford.edu/~dabo/pubs/abstracts/ssl-client-bugs.html" \
@@ -1343,35 +1379,35 @@ if [ "$DO_PHP" = "true" ]; then
     'include (' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "include\s{0,$WILDCARD_SHORT}\(" \
-    "2_php_include.txt" \
+    "4_php_include.txt" \
     "-i"
     
     search "You can make a lot of things wrong with include_once" \
     'include_once (' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "include_once\s{0,$WILDCARD_SHORT}\(" \
-    "2_php_include_once.txt" \
+    "4_php_include_once.txt" \
     "-i"
     
     search "You can make a lot of things wrong with require" \
     'require (' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "require\s{0,$WILDCARD_SHORT}\(" \
-    "2_php_require.txt" \
+    "4_php_require.txt" \
     "-i"
     
     search "You can make a lot of things wrong with require_once" \
     'require_once (' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "require_once\s{0,$WILDCARD_SHORT}\(" \
-    "2_php_require_once.txt" \
+    "4_php_require_once.txt" \
     "-i"
     
     search "Methods that often introduce XSS: echo" \
     'echo' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "echo" \
-    "4_php_echo_high_volume.txt" \
+    "5_php_echo_high_volume.txt" \
     "-i"
     
     search "Methods that often introduce XSS: echo in combination with \$_POST." \
@@ -1406,7 +1442,7 @@ if [ "$DO_PHP" = "true" ]; then
     'print' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "print" \
-    "4_php_print_high_volume.txt" \
+    "5_php_print_high_volume.txt" \
     "-i"
     
     search "Methods that often introduce XSS: print in combination with \$_POST." \
@@ -1476,35 +1512,41 @@ if [ "$DO_PHP" = "true" ]; then
     'rand(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "rand\s{0,$WILDCARD_SHORT}\(" \
-    "3_php_rand.txt" \
+    "5_php_rand.txt" \
     "-i"
     
     search "Extract can be dangerous and could be used as backdoor, see http://blog.sucuri.net/2014/02/php-backdoors-hidden-with-clever-use-of-extract-function.html#null" \
     'extract(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "extract\s{0,$WILDCARD_SHORT}\(" \
-    "3_php_extract.txt" \
+    "4_php_extract.txt" \
     "-i"
     
     search "Assert can be used as backdoor, see http://rileykidd.com/2013/08/21/the-backdoor-you-didnt-grep/" \
     'assert(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "assert\s{0,$WILDCARD_SHORT}\(" \
-    "3_php_assert.txt" \
+    "5_php_assert.txt" \
     "-i"
     
     search "Preg_replace can be used as backdoor, see http://labs.sucuri.net/?note=2012-05-21" \
     'preg_replace(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "preg_replace\s{0,$WILDCARD_SHORT}\(" \
-    "3_php_preg_replace.txt" \
+    "5_php_preg_replace.txt" \
     "-i"
     
     search "The big problem with == is that in PHP (and some other languages), this comparison is not type safe. What you should always use is ===. For example a hash value that starts with 0E could be interpreted as an integer if you don't take care. There were real world bugs exploiting this issue already, think login form and comparing the hashed user password, what happens if you type in 0 as the password and brute force different usernames until a user has a hash which starts with 0E?" \
     'hashvalue_from_db == PBKDF2(password_from_login_http_request)' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "[^=]==[^=]" \
-    "4_php_type_unsafe_comparison.txt"
+    "6_php_type_unsafe_comparison.txt"
+    
+    search "hash_hmac with user input. It throws a warning when the second parameter is an array instead of an exception, which is sometimes an issue as you can input arrays by using param[]=value." \
+    'hash_hmac("sha256", $_POST["salt"], $secret);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "hash_hmac\s{0,$WILDCARD_SHORT}\(.{0,$WILDCARD_LONG}\\\$_" \
+    "2_hmac_with_user_input.txt"
 fi
 
 #The HTML specific stuff
@@ -1516,21 +1558,21 @@ if [ "$DO_HTML" = "true" ]; then
     'enctype="multipart/form-data"' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "multipart/form-data" \
-    "2_html_upload_form_tag.txt" \
+    "4_html_upload_form_tag.txt" \
     "-i"
     
     search "HTML upload form." \
     '<input name="param" type="file"' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "type=.?file" \
-    "3_html_upload_input_tag.txt" \
+    "4_html_upload_input_tag.txt" \
     "-i"
     
     search "Autocomplete should be set to off for password fields." \
     'autocomplete' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'autocomplete' \
-    "5_html_autocomplete.txt" \
+    "6_html_autocomplete.txt" \
     "-i"
     
     search "Angular.js has this Strict Contextual Escaping (SCE) that should prevent ." \
@@ -1558,14 +1600,14 @@ if [ "$DO_HTML" = "true" ]; then
     'application/octet-stream' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'application/octet-stream' \
-    "3_html_application_octet-stream.txt" \
+    "4_html_application_octet-stream.txt" \
     "-i"
     
     search 'text/plain is subject to content sniffing in some browsers.' \
     'text/plain' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'text/plain' \
-    "3_html_text_plain.txt" \
+    "4_html_text_plain.txt" \
     "-i"
     
 fi
@@ -1641,6 +1683,13 @@ if [ "$DO_JAVASCRIPT" = "true" ]; then
     "\.innerHTML\s{0,$WILDCARD_SHORT}=" \
     "4_js_dom_xss_innerHTML.txt"
     
+    search "DangerouslySetInnerHTML: DOM-based XSS sink for React.js basically. Simply what's innerHTML is called dangerouslySetInnerHTML in React." \
+    '<div className="text" dangerouslySetInnerHTML={{ __html: text }} />' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "DangerouslySetInnerHTML\s{0,$WILDCARD_SHORT}=" \
+    "4_js_react_dom_xss_dangerouslySetInnerHTML.txt" \
+    "-i"
+    
     search "OuterHTML: DOM-based XSS source/sink." \
     '.outerHTML =' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -1683,11 +1732,11 @@ if [ "$DO_JAVASCRIPT" = "true" ]; then
     "createElement.{0,$WILDCARD_SHORT}script" \
     "3_js_createElement_script.txt"
     
-    search "RFC 4627 includes a parser regex example http://www.ietf.org/rfc/rfc4627.txt and it is insecure ass explained in the 'the tangled web' book, as it allows incrementing and decrementing of certain variables." \
+    search "RFC 4627 includes a parser regex example http://www.ietf.org/rfc/rfc4627.txt and it is insecure as explained in the 'the tangled web' book, as it allows incrementing and decrementing of certain variables." \
     'var my_JSON_object = !(/[^,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]/.test( var my_JSON_object = !(/[^,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]/.test(eval(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "Eaeflnr-u" \
-    "3_js_insecure_JSON_parser.txt"
+    "2_js_insecure_JSON_parser.txt"
     
     search "Setting the document.domain influences the same origin policy." \
     'document.domain = example.com' \
@@ -1729,7 +1778,7 @@ if [ "$DO_MODSECURITY" = "true" ]; then
     'block' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'block' \
-    "3_modsecurity_block.txt" \
+    "5_modsecurity_block.txt" \
     "-i"
     
     search "Rather complex modsecurity constructs that are worth having a look." \
@@ -1864,31 +1913,31 @@ if [ "$DO_ANDROID" = "true" ]; then
     'Log.e(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'Log\.e\(' \
-    "3_android_logging_error.txt"
+    "6_android_logging_error.txt"
     
     search "From http://developer.android.com/reference/android/util/Log.html : The order in terms of verbosity, from least to most is ERROR, WARN, INFO, DEBUG, VERBOSE. Verbose should never be compiled into an application except during development. Debug logs are compiled in but stripped at runtime. Error, warning and info logs are always kept." \
     'Log.w(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'Log\.w\(' \
-    "3_android_logging_warning.txt"
+    "6_android_logging_warning.txt"
     
     search "From http://developer.android.com/reference/android/util/Log.html : The order in terms of verbosity, from least to most is ERROR, WARN, INFO, DEBUG, VERBOSE. Verbose should never be compiled into an application except during development. Debug logs are compiled in but stripped at runtime. Error, warning and info logs are always kept." \
     'Log.i(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'Log\.i\(' \
-    "3_android_logging_information.txt"
+    "6_android_logging_information.txt"
     
     search "From http://developer.android.com/reference/android/util/Log.html : The order in terms of verbosity, from least to most is ERROR, WARN, INFO, DEBUG, VERBOSE. Verbose should never be compiled into an application except during development. Debug logs are compiled in but stripped at runtime. Error, warning and info logs are always kept." \
     'Log.d(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'Log\.d\(' \
-    "3_android_logging_debug.txt"
+    "6_android_logging_debug.txt"
     
     search "From http://developer.android.com/reference/android/util/Log.html : The order in terms of verbosity, from least to most is ERROR, WARN, INFO, DEBUG, VERBOSE. Verbose should never be compiled into an application except during development. Debug logs are compiled in but stripped at runtime. Error, warning and info logs are always kept." \
     'Log.v(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'Log\.v\(' \
-    "3_android_logging_verbose.txt"
+    "6_android_logging_verbose.txt"
     
     search "File MODE_PRIVATE for file access on Android, see https://developer.android.com/reference/android/content/Context.html" \
     'MODE_PRIVATE' \
@@ -1912,73 +1961,73 @@ if [ "$DO_ANDROID" = "true" ]; then
     '.openFile(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.openFile\(' \
-    "3_android_access_openFile.txt"
+    "5_android_access_openFile.txt"
     
     search "Opening an asset files on Android, see https://developer.android.com/reference/android/content/ContentProvider.html" \
     '.openAssetFile(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.openAssetFile\(' \
-    "3_android_access_openAssetFile.txt"
+    "5_android_access_openAssetFile.txt"
     
     search "Android database open or create" \
     '.openOrCreate' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.openOrCreate' \
-    "3_android_access_openOrCreate.txt"
+    "5_android_access_openOrCreate.txt"
     
     search "Android get database" \
     '.getDatabase(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.getDatabase\(' \
-    "3_android_access_getDatabase.txt"
+    "5_android_access_getDatabase.txt"
     
     search "Android open database (and btw. a deprecated W3C standard that was never really implemented in a lot of browsers for JavaScript for local storage)" \
     '.openDatabase(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.openDatabase\(' \
-    "3_android_access_openDatabase.txt"
+    "5_android_access_openDatabase.txt"
     
     search "Get shared preferences on Android, see https://developer.android.com/reference/android/content/SharedPreferences.html" \
     '.getShared' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.getShared' \
-    "3_android_access_getShared.txt"
+    "5_android_access_getShared.txt"
     
     search "Get cache directory on Android, see https://developer.android.com/reference/android/content/Context.html" \
     'context.getCacheDir()' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.getCache' \
-    "3_android_access_getCache.txt"
+    "5_android_access_getCache.txt"
     
     search "Get code cache directory on Android, see https://developer.android.com/reference/android/content/Context.html" \
     '.getCodeCache' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.getCodeCache' \
-    "3_android_access_getCodeCache.txt"
+    "5_android_access_getCodeCache.txt"
     
     search "Get external cache directory on Android has no security as it is on the SD card and the file system usually doesn't support permissions, see https://developer.android.com/reference/android/content/Context.html" \
     '.getExternalCacheDirs' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.getExternalCache' \
-    "3_android_access_getExternalCache.txt"
+    "5_android_access_getExternalCache.txt"
     
     search "Get external file directory on Android has no security as it is on the SD card and the file system usually doesn't support permissions, see https://developer.android.com/reference/android/content/Context.html" \
     '.getExternalFilesDir' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.getExternalFile' \
-    "3_android_access_getExternalFile.txt"
+    "5_android_access_getExternalFile.txt"
     
     search "Get external media directory on Android has no security as it is on the SD card and the file system usually doesn't support permissions, see https://developer.android.com/reference/android/content/Context.html" \
     '.getExternalMedia' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.getExternalMedia' \
-    "3_android_access_getExternalMedia.txt"
+    "5_android_access_getExternalMedia.txt"
     
     search "Do a query on Android" \
     '.query(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'query\(' \
-    "3_android_access_query.txt"
+    "5_android_access_query.txt"
     
     search "RawQuery. If the first argument to rawQuery is a user suplied input, it's an SQL injection." \
     'rawQuery(' \
@@ -2023,43 +2072,43 @@ if [ "$DO_ANDROID" = "true" ]; then
     'startActivity(intent);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'startActivity\(' \
-    "2_android_intents_startActivity.txt"
+    "4_android_intents_startActivity.txt"
     
     search "Android get intent" \
     '.getIntent(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.getIntent\(' \
-    "3_android_intents_getIntent.txt"
+    "4_android_intents_getIntent.txt"
     
     search "Android get data from an intent" \
     '.getData(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.getData\(' \
-    "3_android_intents_getData.txt"
+    "4_android_intents_getData.txt"
     
     search "Java URI parsing. Often used in Android for an intent, where it is important to specify the receiving package with setPackage as well, so that no other app could receive the intent." \
     'Uri u = Uri.parse(scheme+"://somepath");' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'Uri.parse\(' \
-    "2_android_uri_parse.txt"
+    "4_android_uri_parse.txt"
     
     search "Android set data for an intent. It is important to specify the receiving package with setPackage as well, so that no other app could receive the intent." \
     '.setData(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.setData\(' \
-    "2_android_intents_setData.txt"
+    "4_android_intents_setData.txt"
     
     search "Android get info about running processes" \
     'RunningAppProcessInfo' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'RunningAppProcessInfo' \
-    "3_android_intents_RunningAppProcessInfo.txt"
+    "4_android_intents_RunningAppProcessInfo.txt"
     
     search "Methods to overwrite SSL certificate checks." \
     'X509TrustManager' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'X509TrustManager' \
-    "2_android_ssl_x509TrustManager.txt"
+    "3_android_ssl_x509TrustManager.txt"
     
     search "Insecure hostname verification." \
     'ALLOW_ALL_HOSTNAME_VERIFIER' \
@@ -2071,25 +2120,25 @@ if [ "$DO_ANDROID" = "true" ]; then
     'implements TrustStrategy' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'implements TrustStrategy' \
-    "2_android_ssl_trustStrategy.txt"
+    "3_android_ssl_trustStrategy.txt"
     
     search "Android get a key store, eg. to store private key or that include CA certificates used for TLS pinning, etc." \
     'KeyStore' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'KeyStore' \
-    "2_android_keyStorage.txt"
+    "5_android_keyStorage.txt"
     
     search "The Key Store provider AndroidKeyStore allows to do hardware-backed storage of Secret Keys (on supported hardware), see https://developer.android.com/training/articles/keystore.html" \
     'KeyPairGenerator kpg = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, "AndroidKeyStore");' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'AndroidKeyStore' \
-    "2_android_AndroidKeyStore.txt"
+    "4_android_AndroidKeyStore.txt"
     
     search "Android Hardware-Backed Key Store function to set time until Key is locked again" \
     'setUserAuthenticationValidityDurationSeconds' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'setUserAuthenticationValidityDurationSeconds' \
-    "2_android_setUserAuthenticationValidityDurationSeconds.txt"
+    "3_android_setUserAuthenticationValidityDurationSeconds.txt"
     
     search "Used to query other appps or let them query, see http://developer.android.com/guide/topics/providers/content-provider-basics.html" \
     'ContentResolver' \
@@ -2107,13 +2156,13 @@ if [ "$DO_ANDROID" = "true" ]; then
     '.loadData(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.loadData\(' \
-    "2_android_webview_loadData.txt"
+    "4_android_webview_loadData.txt"
     
     search "File system access is often enabled WebViews. Private files could be read by malicious contents. Eg. file://data/data/ch.example/secret.txt" \
     '.loadUrl(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.loadUrl\(' \
-    "2_android_webview_loadUrl.txt"
+    "4_android_webview_loadUrl.txt"
     
     search "Changing the security settings of WebViews could allow malicious contents in the WebView to read private data, etc." \
     'setAllowUniversalAccessFromFileURLs' \
@@ -2137,13 +2186,13 @@ if [ "$DO_ANDROID" = "true" ]; then
     'intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'FLAG_ACTIVITY_NEW_TASK' \
-    "3_android_FLAG_ACTIVITY_NEW_TASK.txt"
+    "5_android_FLAG_ACTIVITY_NEW_TASK.txt"
     
     search "If an Android app wants to specify how the app is backuped, you use BackupAgent to interfere... Often shows which sensitive data is not written to the backup. See https://developer.android.com/reference/android/app/backup/BackupAgent.html" \
     'new BackupAgent()' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "BackupAgent" \
-    "3_android_backupAgent.txt"
+    "4_android_backupAgent.txt"
     
     search "/system is the path where a lot of binaries are stored. So whenever an Android app does something like executing a binary such as /system/xbin/which with an absolut path. Often used in root-detection mechanisms." \
     '/system/xbin/which' \
@@ -2200,44 +2249,44 @@ if [ "$DO_IOS" = "true" ]; then
     'fileURLWithPath' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'fileURLWithPath' \
-    "2_ios_file_access_fileURLWithPath.txt"
+    "4_ios_file_access_fileURLWithPath.txt"
     
     #Rule triggers for Objective-C and SWIFT
     search "iOS NSURL opens a URL for example a local file, eg. for writing. Make sure attributes such as NSURLIsExcludedFromBackupKey described on https://developer.apple.com/library/content/qa/qa1719/_index.html are correctly set." \
     'NSURL' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'NSURL' \
-    "3_ios_file_access_NSURL.txt"
+    "4_ios_file_access_NSURL.txt"
     
     search "iOS NSURLConnection." \
     'NSURLConnection' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'NSURLConnection' \
-    "3_ios_file_access_NSURLConnection.txt"
+    "4_ios_file_access_NSURLConnection.txt"
     
     search "iOS NSFile" \
     'NSFile' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'NSFile' \
-    "4_ios_file_access_nsfile.txt"
+    "5_ios_file_access_nsfile.txt"
     
     search "iOS writeToFile" \
     'writeToFile' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'writeToFile' \
-    "3_ios_file_access_writeToFile.txt"
+    "4_ios_file_access_writeToFile.txt"
     
     search "iOS writeToUrl" \
     'writeToUrl' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'writeToUrl' \
-    "3_ios_writeToUrl.txt"
+    "5_ios_writeToUrl.txt"
     
     search "iOS UIWebView, see also https://github.com/felixgr/secure-ios-app-dev" \
     'UIWebView' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'UIWebView' \
-    "3_ios_UIWebView.txt"
+    "5_ios_UIWebView.txt"
     
     search "iOS loadHTMLString method of UIWebView in iOS" \
     'loadHTMLString' \
@@ -2249,13 +2298,13 @@ if [ "$DO_IOS" = "true" ]; then
     'loadRequest' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'loadRequest' \
-    "3_ios_loadRequest.txt"
+    "4_ios_loadRequest.txt"
     
     search "iOS shouldStartLoadWithRequest method of UIWebView in iOS" \
     'shouldStartLoadWithRequest' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'shouldStartLoadWithRequest' \
-    "3_ios_shouldStartLoadWithRequest.txt"
+    "5_ios_shouldStartLoadWithRequest.txt"
     
     search "iOS stringByEvaluatingJavaScriptFromString method of UIWebView in iOS" \
     'stringByEvaluatingJavaScriptFromString' \
@@ -2321,92 +2370,92 @@ if [ "$DO_IOS" = "true" ]; then
     'NSFileManager' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'NSFileManager' \
-    "3_ios_file_access_nsfilemanager.txt"
+    "4_ios_file_access_nsfilemanager.txt"
     
     search "iOS File protection APIs" \
     'NSPersistantStoreCoordinator' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'NSPersistantStoreCoordinator' \
-    "3_ios_file_access_nspersistantstorecoordinator.txt"
+    "4_ios_file_access_nspersistantstorecoordinator.txt"
     
     search "iOS File protection APIs, NSDataWritingFileProtectionNone, NSDataWritingFileProtectionComplete, NSDataWritingFileProtectionCompleteUnlessOpen, NSDataWritingFileProtectionCompleteUntilFirstUserAuthentication" \
     'NSDataWritingFileProtectionNone' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'NSData' \
-    "3_ios_file_access_nsdata.txt"
+    "5_ios_file_access_nsdata.txt"
     
     # The following regex match if it is not a "T" that would indicate the "ThisDeviceOnly" part
     search "iOS Keychain kSecAttrAccessibleWhenUnlocked should be kSecAttrAccessibleWhenUnlockedThisDeviceOnly to make sure they are not backuped, see https://developer.apple.com/documentation/security/ksecattraccessiblewhenunlocked" \
     'kSecAttrAccessibleWhenUnlocked and something afterwards' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'kSecAttrAccessibleWhenUnlocked[^T]' \
-    "2_ios_keychain_kSecAttrAccessibleWhenUnlocked.txt"
+    "3_ios_keychain_kSecAttrAccessibleWhenUnlocked.txt"
     
     search "iOS Keychain kSecAttrAccessibleAfterFirstUnlock should be kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly to make sure they are not backuped, see https://developer.apple.com/documentation/security/ksecattraccessiblewhenunlocked" \
     'kSecAttrAccessibleAfterFirstUnlock and something afterwards' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'kSecAttrAccessibleAfterFirstUnlock[^T]' \
-    "2_ios_keychain_kSecAttrAccessibleAfterFirstUnlock.txt"
+    "3_ios_keychain_kSecAttrAccessibleAfterFirstUnlock.txt"
     
     search "iOS Keychain kSecAttrAccessibleWhenPasscodeSet should be kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly to make sure they are not backuped, see https://developer.apple.com/documentation/security/ksecattraccessiblewhenunlocked" \
     'kSecAttrAccessibleWhenPasscodeSet and something afterwards' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'kSecAttrAccessibleWhenPasscodeSet[^T]' \
-    "2_ios_keychain_kSecAttrAccessibleWhenPasscodeSet.txt"
+    "3_ios_keychain_kSecAttrAccessibleWhenPasscodeSet.txt"
     
     search "iOS Keychain kSecAttrAccessibleAlways should be kSecAttrAccessibleAlwaysThisDeviceOnly to make sure they are not backuped, see https://developer.apple.com/documentation/security/ksecattraccessiblewhenunlocked" \
     'kSecAttrAccessibleAlways and something afterwards' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'kSecAttrAccessibleAlways[^T]' \
-    "2_ios_keychain_kSecAttrAccessibleAlways.txt"
+    "3_ios_keychain_kSecAttrAccessibleAlways.txt"
     
     search "iOS Keychain kSecAttrSynchronizable should be false, see https://github.com/felixgr/secure-ios-app-dev" \
     'kSecAttrSynchronizable' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'kSecAttrSynchronizable' \
-    "2_ios_keychain_kSecAttrSynchronizable.txt"
+    "3_ios_keychain_kSecAttrSynchronizable.txt"
     
     search "iOS Keychain stuff, general match" \
     'kSecAttrAccessible' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'kSecAttrAccessible' \
-    "3_ios_keychain_ksecattraccessible.txt"
+    "4_ios_keychain_ksecattraccessible.txt"
     
     search "iOS Keychain stuff" \
     'SecItemAdd' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'SecItemAdd' \
-    "3_ios_keychain_secitemadd.txt"
+    "4_ios_keychain_secitemadd.txt"
     
     search "iOS Keychain stuff" \
     'SecItemUpdate' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'SecItemUpdate' \
-    "3_ios_keychain_SecItemUpdate.txt"
+    "4_ios_keychain_SecItemUpdate.txt"
     
     search "iOS Keychain stuff" \
     'SecItemCopyMatching' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'SecItemCopyMatching' \
-    "3_ios_keychain_SecItemCopyMatching.txt"
+    "4_ios_keychain_SecItemCopyMatching.txt"
     
     search "iOS Keychain stuff" \
     'KeychainItemWrapper' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'KeychainItemWrapper' \
-    "3_ios_keychain_KeychainItemWrapper.txt"
+    "4_ios_keychain_KeychainItemWrapper.txt"
     
     search "iOS Keychain stuff" \
     'Security.h' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'Security\.h' \
-    "3_ios_keychain_security_h.txt"
+    "5_ios_keychain_security_h.txt"
     
     search "CFStream" \
     'CFStream' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'CFStream' \
-    "3_ios_CFStream.txt"
+    "5_ios_CFStream.txt"
     
     search "kCFStreamSSLAllowsExpiredCertificates" \
     'kCFStreamSSLAllowsExpiredCertificates' \
@@ -2472,193 +2521,193 @@ if [ "$DO_IOS" = "true" ]; then
     'willCacheResponse' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'willCacheResponse' \
-    "3_ios_willCacheResponse.txt"
+    "4_ios_willCacheResponse.txt"
     
     search "CFFTPStream" \
     'CFFTPStream' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'CFFTPStream' \
-    "3_ios_CFFTPStream.txt"
+    "4_ios_CFFTPStream.txt"
     
     search "NSStreamin" \
     'NSStreamin' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'NSStreamin' \
-    "3_ios_NSStreamin.txt"
+    "4_ios_NSStreamin.txt"
     
     search "NSXMLParser" \
     'NSXMLParser' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'NSXMLParser' \
-    "3_ios_NSXMLParser.txt"
+    "4_ios_NSXMLParser.txt"
     
     search "UIPasteboardNameGeneral and UIPasteboardNameFind" \
     'UIPasteboardName' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'UIPasteboardName' \
-    "3_ios_UIPasteboardName.txt"
+    "4_ios_UIPasteboardName.txt"
     
     search "CFHTTP" \
     'CFHTTP' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'CFHTTP' \
-    "3_ios_CFHTTP.txt"
+    "5_ios_CFHTTP.txt"
     
     search "CFNetServices" \
     'CFNetServices' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'CFNetServices' \
-    "3_ios_CFNetServices.txt"
+    "5_ios_CFNetServices.txt"
     
     search "FTPURL" \
     'FTPURL' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'FTPURL' \
-    "3_ios_FTPURL.txt"
+    "4_ios_FTPURL.txt"
     
     search "IOBluetooth" \
     'IOBluetooth' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'IOBluetooth' \
-    "3_ios_IOBluetooth.txt"
+    "4_ios_IOBluetooth.txt"
     
     search "NSLog" \
     'NSLog(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'NSLog\(' \
-    "3_ios_NSLog.txt"
+    "6_ios_NSLog.txt"
     
     search "iOS string format function initWithFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'initWithFormat:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'initWithFormat:' \
-    "4_ios_string_format_initWithFormat_wide.txt"
+    "5_ios_string_format_initWithFormat_wide.txt"
     
     search "iOS string format function initWithFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'initWithFormat:var' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'initWithFormat:[^@]' \
-    "3_ios_string_format_initWithFormat_narrow.txt"
+    "4_ios_string_format_initWithFormat_narrow.txt"
     
     search "iOS string format function informativeTextWithFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'informativeTextWithFormat:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'informativeTextWithFormat:' \
-    "4_ios_string_format_informativeTextWithFormat_wide.txt"
+    "5_ios_string_format_informativeTextWithFormat_wide.txt"
     
     search "iOS string format function informativeTextWithFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'informativeTextWithFormat:var' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'informativeTextWithFormat:[^@]' \
-    "3_ios_string_format_informativeTextWithFormat_narrow.txt"
+    "4_ios_string_format_informativeTextWithFormat_narrow.txt"
     
     search "iOS string format function format. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'format:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'format:' \
-    "4_ios_string_format_format_wide.txt"
+    "5_ios_string_format_format_wide.txt"
     
     search "iOS string format function format. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'format:var' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'format:[^@]' \
-    "3_ios_string_format_format_narrow.txt"
+    "4_ios_string_format_format_narrow.txt"
     
     search "iOS string format function stringWithFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'stringWithFormat:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'stringWithFormat:' \
-    "4_ios_string_format_stringWithFormat_wide.txt"
+    "5_ios_string_format_stringWithFormat_wide.txt"
     
     search "iOS string format function stringWithFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'stringWithFormat:var' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'stringWithFormat:[^@]' \
-    "3_ios_string_format_stringWithFormat_narrow.txt"
+    "4_ios_string_format_stringWithFormat_narrow.txt"
     
     search "iOS string format function stringByAppendingFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'stringByAppendingFormat:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'stringByAppendingFormat:' \
-    "4_ios_string_format_stringByAppendingFormat_wide.txt"
+    "5_ios_string_format_stringByAppendingFormat_wide.txt"
     
     search "iOS string format function stringByAppendingFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'stringByAppendingFormat:var' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'stringByAppendingFormat:[^@]' \
-    "3_ios_string_format_stringByAppendingFormat_narrow.txt"
+    "4_ios_string_format_stringByAppendingFormat_narrow.txt"
     
     search "iOS string format function appendFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'appendFormat:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'appendFormat:' \
-    "4_ios_string_format_appendFormat_wide.txt"
+    "5_ios_string_format_appendFormat_wide.txt"
     
     search "iOS string format function appendFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'appendFormat:var' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'appendFormat:[^@]' \
-    "3_ios_string_format_appendFormat_narrow.txt"
+    "4_ios_string_format_appendFormat_narrow.txt"
     
     search "iOS string format function alertWithMessageText. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'alertWithMessageText:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'alertWithMessageText:' \
-    "4_ios_string_format_alertWithMessageText_wide.txt"
+    "5_ios_string_format_alertWithMessageText_wide.txt"
     
     search "iOS string format function alertWithMessageText. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'alertWithMessageText:var' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'alertWithMessageText:[^@]' \
-    "3_ios_string_format_alertWithMessageText_narrow.txt"
+    "4_ios_string_format_alertWithMessageText_narrow.txt"
     
     search "iOS string format function predicateWithFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'predicateWithFormat:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'predicateWithFormat:' \
-    "4_ios_string_format_predicateWithFormat_wide.txt"
+    "5_ios_string_format_predicateWithFormat_wide.txt"
     
     search "iOS string format function predicateWithFormat. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'predicateWithFormat:var' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'predicateWithFormat:[^@]' \
-    "3_ios_string_format_predicateWithFormat_narrow.txt"
+    "4_ios_string_format_predicateWithFormat_narrow.txt"
     
     search "iOS string format function of NSException. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     '[NSException raise:format:]' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     ':format' \
-    "3_ios_string_format.txt"
+    "5_ios_string_format.txt"
     
     search "iOS string format function NSRunAlertPanel. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'NSRunAlertPanel:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'NSRunAlertPanel:' \
-    "4_ios_string_format_NSRunAlertPanel_wide.txt"
+    "5_ios_string_format_NSRunAlertPanel_wide.txt"
     
     search "iOS string format function NSRunAlertPanel. Just check if the first argument to these functions are user controlled, that could be a format string vulnerability." \
     'NSRunAlertPanel:var' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'NSRunAlertPanel:[^@]' \
-    "3_ios_string_format_NSRunAlertPanel_narrow.txt"
+    "4_ios_string_format_NSRunAlertPanel_narrow.txt"
     
     search "iOS URL handler handleOpenURL, also see https://github.com/felixgr/secure-ios-app-dev" \
     'handleOpenURL' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'handleOpenURL' \
-    "3_ios_string_format_url_handler_handleOpenURL.txt"
+    "5_ios_string_format_url_handler_handleOpenURL.txt"
     
     search "iOS URL handler openURL" \
     'openURL' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'openURL' \
-    "3_ios_string_format_url_handler_openURL.txt"
+    "5_ios_string_format_url_handler_openURL.txt"
     
     search "sourceApplication is a parameter used in the application method used for custom URL handling and receiving data from another app, see https://developer.apple.com/documentation/uikit/uiapplicationdelegate/1623073-application . See also https://developer.apple.com/library/content/documentation/iPhone/Conceptual/iPhoneOSProgrammingGuide/Inter-AppCommunication/Inter-AppCommunication.html ." \
     'sourceApplication:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'sourceApplication:' \
-    "2_ios_sourceApplication.txt"
+    "3_ios_sourceApplication.txt"
     
     #Below here Info.plist stuff
     search "NSAllowsArbitraryLoads set to 1 allows iOS applications to load resources over insecure non-TLS protocols and is specified in the Info.plist file. It doesn't mean the application is really doing it, however, it is recommended to disable non-TLS connections." \
@@ -2671,13 +2720,13 @@ if [ "$DO_IOS" = "true" ]; then
     'CFBundleDocumentTypes' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'CFBundleDocumentTypes' \
-    "2_ios_CFBundleDocumentTypes.txt"
+    "4_ios_CFBundleDocumentTypes.txt"
     
     search "CFBundleURLTypes defines int he Info.plist file a custom URL handler that will trigger the application and is used as an IPC mechanism. See also https://developer.apple.com/library/content/documentation/iPhone/Conceptual/iPhoneOSProgrammingGuide/Inter-AppCommunication/Inter-AppCommunication.html ." \
     'CFBundleURLTypes' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'CFBundleURLTypes' \
-    "2_ios_CFBundleURLTypes.txt"
+    "4_ios_CFBundleURLTypes.txt"
     
     search "SecRandomCopyBytes cryptographic secure random number, see also https://github.com/felixgr/secure-ios-app-dev" \
     'int r = SecRandomCopyBytes(kSecRandomDefault, sizeof(int), (uint8_t*) &res);' \
@@ -2707,37 +2756,37 @@ if [ "$DO_IOS" = "true" ]; then
     'NSCoding' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'NSCoding' \
-    "3_ios_NSCoding.txt"
+    "5_ios_NSCoding.txt"
     
     search "Other deserialization (CFBundle, NSBundle, NSKeyedUnarchiverDelegate, didDecodeObject, awakeAfterUsingCoder) can directly lead to code execution by returning different objects during deserialization. See also https://github.com/felixgr/secure-ios-app-dev" \
     'CFBundle' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'CFBundle' \
-    "3_ios_CFBundle.txt"
+    "5_ios_CFBundle.txt"
     
     search "Other deserialization (CFBundle, NSBundle, NSKeyedUnarchiverDelegate, didDecodeObject, awakeAfterUsingCoder) can directly lead to code execution by returning different objects during deserialization. See also https://github.com/felixgr/secure-ios-app-dev" \
     'NSBundle' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'NSBundle' \
-    "3_ios_NSBundle.txt"
+    "5_ios_NSBundle.txt"
     
     search "Other deserialization (CFBundle, NSBundle, NSKeyedUnarchiverDelegate, didDecodeObject, awakeAfterUsingCoder) can directly lead to code execution by returning different objects during deserialization. See also https://github.com/felixgr/secure-ios-app-dev" \
     'NSKeyedUnarchiverDelegate' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'NSKeyedUnarchiverDelegate' \
-    "3_ios_NSKeyedUnarchiverDelegate.txt"
+    "5_ios_NSKeyedUnarchiverDelegate.txt"
     
     search "Other deserialization (CFBundle, NSBundle, NSKeyedUnarchiverDelegate, didDecodeObject, awakeAfterUsingCoder) can directly lead to code execution by returning different objects during deserialization. See also https://github.com/felixgr/secure-ios-app-dev" \
     'didDecodeObject' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'didDecodeObject' \
-    "3_ios_didDecodeObject.txt"
+    "5_ios_didDecodeObject.txt"
     
     search "Other deserialization (CFBundle, NSBundle, NSKeyedUnarchiverDelegate, didDecodeObject, awakeAfterUsingCoder) can directly lead to code execution by returning different objects during deserialization. See also https://github.com/felixgr/secure-ios-app-dev" \
     'awakeAfterUsingCoder' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'awakeAfterUsingCoder' \
-    "3_ios_awakeAfterUsingCoder.txt"
+    "5_ios_awakeAfterUsingCoder.txt"
     
     search "Check for SQL injection. See also https://github.com/felixgr/secure-ios-app-dev" \
     'sqlite3_exec()' \
@@ -2761,7 +2810,7 @@ if [ "$DO_IOS" = "true" ]; then
     'allowedInsecureSchemes' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'allowedInsecureSchemes' \
-    "2_ios_allowedInsecureSchemes.txt"
+    "3_ios_allowedInsecureSchemes.txt"
     
     search "allowLocalhostRequest, see also https://github.com/felixgr/secure-ios-app-dev" \
     'allowLocalhostRequest' \
@@ -2803,7 +2852,7 @@ if [ "$DO_IOS" = "true" ]; then
     'syslog(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'syslog\(' \
-    "2_ios_syslog.txt"
+    "3_ios_syslog.txt"
     
     search "Format string vulnerable CFStringCreateWithFormat method, see also https://github.com/felixgr/secure-ios-app-dev" \
     'CFStringCreateWithFormat' \
@@ -2815,25 +2864,25 @@ if [ "$DO_IOS" = "true" ]; then
     'CFStringAppendFormat' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'CFStringAppendFormat' \
-    "2_ios_CFStringAppendFormat.txt"
+    "4_ios_CFStringAppendFormat.txt"
     
     search "UnsafePointer for Swift methods, see also https://github.com/felixgr/secure-ios-app-dev" \
     'UnsafePointer' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'UnsafePointer' \
-    "2_ios_UnsafePointer.txt"
+    "3_ios_UnsafePointer.txt"
     
     search "UnsafeMutablePointer for Swift methods, see also https://github.com/felixgr/secure-ios-app-dev" \
     'UnsafeMutablePointer' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'UnsafeMutablePointer' \
-    "2_ios_UnsafeMutablePointer.txt"
+    "3_ios_UnsafeMutablePointer.txt"
     
     search "UnsafeCollection for Swift methods, see also https://github.com/felixgr/secure-ios-app-dev" \
     'UnsafeCollection' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'UnsafeCollection' \
-    "2_ios_UnsafeCollection.txt"
+    "3_ios_UnsafeCollection.txt"
     
 fi
 
@@ -2861,43 +2910,43 @@ if [ "$DO_PYTHON" = "true" ]; then
     '1+1 is 2' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\d\s{1,$WILDCARD_SHORT}is\s{1,$WILDCARD_SHORT}" \
-    "2_python_is_object_identity_operator_left.txt"
+    "4_python_is_object_identity_operator_left.txt"
     
     search "The 'is' object identity operator should not be used for numbers, see https://access.redhat.com/blogs/766093/posts/2592591" \
     '1+1 is 2' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\s{1,$WILDCARD_SHORT}is\s{1,$WILDCARD_SHORT}\d" \
-    "2_python_is_object_identity_operator_right.txt"
+    "4_python_is_object_identity_operator_right.txt"
     
     search "The 'is' object identity operator should not be used for numbers, see https://access.redhat.com/blogs/766093/posts/2592591" \
     'object.an_integer is other_object.other_integer' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\sis\s" \
-    "5_python_is_object_identity_operator_general.txt"
+    "4_python_is_object_identity_operator_general.txt"
     
     search "The float type can not be reliably compared for equality, see https://access.redhat.com/blogs/766093/posts/2592591" \
     '2.2 * 3.0 == 3.3 * 2.2' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\d\.\d{1,$WILDCARD_SHORT}\s{1,$WILDCARD_SHORT}==\s{1,$WILDCARD_SHORT}" \
-    "2_python_float_equality_left.txt"
+    "3_python_float_equality_left.txt"
     
     search "The float type can not be reliably compared for equality, see https://access.redhat.com/blogs/766093/posts/2592591" \
     '2.2 * 3.0 == 3.3 * 2.2' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\s{1,$WILDCARD_SHORT}==\s{1,$WILDCARD_SHORT}\d\.\d{1,$WILDCARD_SHORT}" \
-    "2_python_float_equality_right.txt"
+    "3_python_float_equality_right.txt"
     
     search "The float type can not be reliably compared for equality. Make sure none of these comparisons uses floats, see https://access.redhat.com/blogs/766093/posts/2592591" \
     '2.2 * 3.0 == 3.3 * 2.2' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\s{1,$WILDCARD_SHORT}==\s{1,$WILDCARD_SHORT}" \
-    "4_python_float_equality_general.txt"
+    "3_python_float_equality_general.txt"
     
     search "Double underscore variable visibility can be tricky, see https://access.redhat.com/blogs/766093/posts/2592591" \
     'self.__private' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "self\.__" \
-    "4_python_double_underscore_general.txt"
+    "3_python_double_underscore_general.txt"
     
     search "Doing things with __code__ is very low level" \
     'object.__code__' \
@@ -2909,7 +2958,7 @@ if [ "$DO_PYTHON" = "true" ]; then
     'subprocess.call(unvalidated_input, shell=True)' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "shell=True" \
-    "3_python_subprocess_shell_true.txt"
+    "2_python_subprocess_shell_true.txt"
     
     search "mktemp of the tempfile module is flawed, see https://access.redhat.com/blogs/766093/posts/2592591" \
     'tempfile.mktemp()' \
@@ -2921,7 +2970,7 @@ if [ "$DO_PYTHON" = "true" ]; then
     'shutil.copyfile(src, dst)' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "copyfile\s{0,$WILDCARD_SHORT}\(" \
-    "3_python_shutil_copyfile.txt"
+    "2_python_shutil_copyfile.txt"
     
     search "shutil.move is flawed and silently leaves the old file behind if the source and destination are on different file systems, see https://access.redhat.com/blogs/766093/posts/2592591" \
     'shutil.move(src, dst)' \
@@ -2990,7 +3039,7 @@ if [ "$DO_RUBY" = "true" ]; then
     'content_tag :tag, body' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "content_tag" \
-    "2_ruby_content_tag.txt"
+    "3_ruby_content_tag.txt"
     
     search "Possible deserialization issues, see https://github.com/presidentbeef/brakeman/blob/master/lib/brakeman/checks/check_deserialize.rb" \
     ':YAML' \
@@ -3262,6 +3311,13 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     "3_cryptocred_ciphers_PBKDF2.txt" \
     "-i"
     
+    search "HMAC. Security depends heavily on usage and what is secured." \
+    'HMAC' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'HMAC' \
+    "3_cryptocred_ciphers_hmac.txt" \
+    "-i"
+    
     search "NTLM. Security depends heavily on usage and what is secured." \
     'NTLM' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -3375,6 +3431,19 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     "3_cryptocred_password.txt" \
     "-i"
     
+    search "Encoded password and variants of it" \
+    'encoded pw = 0x1234' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'encoded.?pw' \
+    "3_cryptocred_encoded_pw.txt" \
+    "-i"
+    
+    search "PW abbrevation for password" \
+    'PW=1234' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'PW.?=' \
+    "4_cryptocred_pw_capitalcase.txt"
+    
     search "PWD abbrevation for password" \
     'PWD' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -3393,16 +3462,17 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     'Pwd' \
     "4_cryptocred_pwd_capitalcase.txt"
     
-    search "PW abbrevation for password" \
-    'PW=1234' \
+    search "The Windows cmd.exe of adding a new user with a password written directly into the cmd.exe. Often found in bad-practice Windows batch scripts or log files." \
+    'net user ALongUserNameExampleHere ALongPaSSwOrdExampleHere /add' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'PW.?=' \
-    "4_cryptocred_pw_capitalcase.txt"
+    "net user.{0,$WILDCARD_LONG}/add" \
+    "1_cryptocred_net_user_add.txt" \
+    "-i"
     
     search "Credentials. Included everything 'creden' because some programers write credencials instead of credentials and such things." \
     'credentials=1234' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "creden.{0,$WILDCARD_SHORT}=.?" \
+    "creden.{0,$WILDCARD_SHORT}=.?[\"'\d]" \
     "2_cryptocred_credentials_narrow.txt" \
     "-i"
     
@@ -3410,35 +3480,63 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     'credentials' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'creden' \
-    "3_cryptocred_credentials_wide.txt" \
+    "4_cryptocred_credentials_wide.txt" \
     "-i"
     
     search "Passcode and variants of it" \
-    'passcode' \
+    'passcode = 123' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "pass.?code.{0,$WILDCARD_SHORT}=.?[\"'\d]" \
+    "2_cryptocred_passcode_narrow.txt" \
+    "-i"
+    
+    search "Passcode and variants of it" \
+    'passcode = "123"' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "pass.?code" \
-    "3_cryptocred_passcode.txt" \
+    "4_cryptocred_passcode_wide.txt" \
+    "-i"
+    
+    search "Passphrase and variants of it" \
+    'passphrase = "123"' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "pass.?phrase.{0,$WILDCARD_SHORT}=.?[\"'\d]" \
+    "2_cryptocred_passphrase_narrow.txt" \
     "-i"
     
     search "Passphrase and variants of it" \
     'passphrase' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "pass.?phrase" \
-    "3_cryptocred_passphrase.txt" \
+    "4_cryptocred_passphrase_wide.txt" \
+    "-i"
+    
+    search "Secret and variants of it" \
+    'secret = "123"' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "se?3?cre?3?t.{0,$WILDCARD_SHORT}=.?[\"'\d]" \
+    "2_cryptocred_secret_narrow.txt" \
     "-i"
     
     search "Secret and variants of it" \
     'secret' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "se?3?cre?3?t" \
-    "3_cryptocred_secret.txt" \
+    "4_cryptocred_secret_wide.txt" \
+    "-i"
+    
+    search "PIN code and variants of it" \
+    'pin code = "123"' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "pin.?code.{0,$WILDCARD_SHORT}=.?[\"'\d]" \
+    "2_cryptocred_pin_code_narrow.txt" \
     "-i"
     
     search "PIN code and variants of it" \
     'pin code' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "pin.?code" \
-    "2_cryptocred_pin_code.txt" \
+    "4_cryptocred_pin_code_wide.txt" \
     "-i"
     
     search "Proxy-Authorization" \
@@ -3859,7 +3957,42 @@ if [ "$DO_GENERAL" = "true" ]; then
     'jdbc:mysql://localhost/test?password=ABC' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'jdbc:' \
-    "3_general_jdbc_uri.txt" \
+    "2_general_jdbc_uri.txt" \
+    "-i"
+    
+    search "Generic database connection string for SQL server. See https://www.connectionstrings.com/sql-server/ for different connection strings." \
+    'Server=myServerAddress;Database=myDataBase;Trusted_Connection=True;' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "Server=.{0,$WILDCARD_SHORT};Database=" \
+    "2_general_con_str_sqlserver.txt" \
+    "-i"
+    
+    search "Generic database connection string for SQL server meaning AD auth is used. See https://www.connectionstrings.com/sql-server/ for different connection strings." \
+    'Server=myServerAddress;Database=myDataBase;Trusted_Connection=True;' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    ";Trusted_Connection=" \
+    "3_general_con_str_trusted_sqlserver.txt" \
+    "-i"
+    
+    search "Generic database connection string for various databases. See https://www.connectionstrings.com/sql-server/ for different connection strings." \
+    'Data Source=myServerAddress;Initial Catalog=myDataBase;Integrated Security=SSPI;User ID=myDomain\myUsername;Password=myPassword;' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    ";Password=" \
+    "1_general_con_str_sql_password.txt" \
+    "-i"
+    
+    search "Generic database connection string for various databases. See https://www.connectionstrings.com/sql-server/ for different connection strings." \
+    'Driver={Oracle in OraHome92};Dbq=myTNSServiceName;Uid=myUsername;Pwd=myPassword;' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    ";Pwd=" \
+    "1_general_con_str_sql_pwd.txt" \
+    "-i"
+    
+    search "Generic database connection string for localdb and other dbs. See https://www.connectionstrings.com/sql-server/ for different connection strings." \
+    'Server=(localdb)\v11.0;Integrated Security=true;AttachDbFileName=C:\MyFolder\MyData.mdf;' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    ";Integrated.Security=" \
+    "2_general_con_str_localdb.txt" \
     "-i"
     
     search "Hidden things, for example hidden HTML fields" \

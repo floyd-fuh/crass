@@ -39,6 +39,7 @@ FIND_COMMAND="find"
 FILE_COMMAND="file"
 GREP_COMMAND="grep"
 SORT_COMMAND="sort"
+CUT_COMMAND="cut"
 ADDITIONAL_FIND_ARGUMENTS=""
 #Where to put the output (if not otherwise specified on command line)
 TARGET="./find-output"
@@ -116,35 +117,41 @@ echo "You are currently finding through folder: $SEARCH_FOLDER"
 
 if [ "$DO_FILE_COMMAND" = "true" ]; then
 
-    OUTFILE="3_file_all_files_listed.txt"
-    echo "# Info: All files and their type according to the file command" >> $TARGET/$OUTFILE
-    echo "# Filename: $OUTFILE" >> "$TARGET/$OUTFILE"
-    echo "# Search: file {}" >> "$TARGET/$OUTFILE"
-    echo "Searching for results for $OUTFILE"
-    $FIND_COMMAND "$SEARCH_FOLDER" -exec $FILE_COMMAND '{}' \; >> $TARGET/$OUTFILE
-
+    # Attention: This can take a very very long time...
+    MAIN_OUTFILE="3_file_all_files_listed.txt"
+    echo "# Info: All files and their type according to the file command" >> $TARGET/$MAIN_OUTFILE
+    echo "# Filename: $MAIN_OUTFILE" >> "$TARGET/$MAIN_OUTFILE"
+    echo "# Search: file {}" >> "$TARGET/$MAIN_OUTFILE"
+    echo "Searching for results for $MAIN_OUTFILE"
+    $FIND_COMMAND "$SEARCH_FOLDER" -exec $FILE_COMMAND '{}' \; >> $TARGET/$MAIN_OUTFILE
+    
+    # ... therefore, at least don't do it again and just work on the above output
     OUTFILE="2_file_all_types.txt"
     echo "# Info: All types uniquely listed (according to the file command)" >> $TARGET/$OUTFILE
     echo "# Filename: $OUTFILE" >> "$TARGET/$OUTFILE"
-    echo "# Search: file -b {} | sort -u" >> "$TARGET/$OUTFILE"
+    #echo "# Search: file -b {} | sort -u" >> "$TARGET/$OUTFILE"
+    echo "# Search: grep -v '^#' $TARGET/$MAIN_OUTFILE | cut -d ':' -f 2- | sort -u" >> "$TARGET/$OUTFILE"
     echo "Searching for results for $OUTFILE"
-    $FIND_COMMAND "$SEARCH_FOLDER" -exec $FILE_COMMAND -b '{}' \; | $SORT_COMMAND -u >> $TARGET/$OUTFILE
+    $GREP_COMMAND -v '^#' "$TARGET/$MAIN_OUTFILE" | $CUT_COMMAND -d ":" -f 2- | $SORT_COMMAND -u >> $TARGET/$OUTFILE
 
     OUTFILE="1_file_dot_net_decompilable_files.txt"
     echo "# Info: .NET executable files (and therefore decompilable) according to file command" >> $TARGET/$OUTFILE
     echo "# Filename: $OUTFILE" >> "$TARGET/$OUTFILE"
-    echo "# Search: file {}|grep -i executable|grep -i '.net'" >> "$TARGET/$OUTFILE"
+    #echo "# Search: file {}|grep -i executable|grep -i '.net'" >> "$TARGET/$OUTFILE"
+    echo "# Search: grep -v '^#' $TARGET/$MAIN_OUTFILE |grep -i executable|grep -i '.net'" >> "$TARGET/$OUTFILE"
     echo "Searching for results for $OUTFILE"
-    $FIND_COMMAND "$SEARCH_FOLDER" -exec $FILE_COMMAND '{}' \; | $GREP_COMMAND -i executable | $GREP_COMMAND -i '.net' >> $TARGET/$OUTFILE
+    #$FIND_COMMAND "$SEARCH_FOLDER" -exec $FILE_COMMAND '{}' \; | $GREP_COMMAND -i executable | $GREP_COMMAND -i '.net' >> $TARGET/$OUTFILE
+    $GREP_COMMAND -v '^#' "$TARGET/$MAIN_OUTFILE" | $GREP_COMMAND -i executable | $GREP_COMMAND -i '.net' >> $TARGET/$OUTFILE
 
     #jars are just zips according to file: Zip archive data, at least v1.0 to extract
     #class: compiled Java class data, version 50.0 (Java 1.6)
     OUTFILE="1_file_java_decompilable_files.txt"
     echo "# Info: Java class files (and therefore decompilable) according to file command, but attention: file detects jar files as zips, so jars are not listed." >> $TARGET/$OUTFILE
     echo "# Filename: $OUTFILE" >> "$TARGET/$OUTFILE"
-    echo "# Search: file {}|grep -i \"Java class\"" >> "$TARGET/$OUTFILE"
+    #echo "# Search: file {}|grep -i \"Java class\"" >> "$TARGET/$OUTFILE"
+    echo "# Search: grep -v '^#' $TARGET/$MAIN_OUTFILE |grep -i \"Java class\"" >> "$TARGET/$OUTFILE"
     echo "Searching for results for $OUTFILE"
-    $FIND_COMMAND "$SEARCH_FOLDER" -exec $FILE_COMMAND '{}' \; | $GREP_COMMAND -i "Java class" >> $TARGET/$OUTFILE
+    $GREP_COMMAND -v '^#' "$TARGET/$MAIN_OUTFILE" | $GREP_COMMAND -i "Java class" >> $TARGET/$OUTFILE
 
 fi
 
@@ -211,7 +218,7 @@ if [ "$DO_FILEEXTENSION" = "true" ]; then
     echo "# Filename: $OUTFILE" >> "$TARGET/$OUTFILE"
     echo "# Search: find | grep -v '.class|.jar|.php|.db|.htm|.js'" >> "$TARGET/$OUTFILE"
     echo "Searching for results for $OUTFILE"
-    $FIND_COMMAND "$SEARCH_FOLDER" | $GREP_COMMAND -v '.class|.jar|.php|.db|.c|.htm|.js' >> $TARGET/$OUTFILE
+    $FIND_COMMAND "$SEARCH_FOLDER" | $GREP_COMMAND -v '.class|.jar|.php|.db|.c|.htm|.log|.js' >> $TARGET/$OUTFILE
 
 fi
 

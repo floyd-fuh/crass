@@ -43,14 +43,18 @@ else
 fi
 
 
-for loops in 1 2 3 4 5
+for loops in 1 2 3
 do
     echo "#Round $loops"
     echo "#unzip all files and delete the zip file afterwards"
     find "$DIR" -depth -iname '*.zip' -exec echo '#Unpacking {}' \; -execdir $UNZIP_CMD -n '{}' \; -delete
 
     echo "#untar all tar files and delete afterwards"
-    find "$DIR" -depth -iname '*.tar' -exec echo '#Unpacking {}' \; -execdir $TAR_CMD -xf '{}' \; -delete
+    find "$DIR" -depth -iname '*.tar' -exec echo '#Unpacking {}' \; -execdir $TAR_CMD -xf '{}' -C . \; -delete
+    
+    echo "#untar all rpm files and delete afterwards"
+    #RPM can also be unpacked with tar
+    find "$DIR" -depth -iname '*.rpm' -exec echo '#Unpacking {}' \; -execdir $TAR_CMD -xf '{}' -C . \; -delete
 
     echo "#ungzip all gz files and delete afterwards"
     find "$DIR" -depth -iname '*.gz' -exec echo '#Unpacking {}' \; -execdir $GZIP_CMD -d '{}' \; -delete

@@ -1547,6 +1547,13 @@ if [ "$DO_PHP" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "hash_hmac\s{0,$WILDCARD_SHORT}\(.{0,$WILDCARD_LONG}\\\$_" \
     "2_hmac_with_user_input.txt"
+    
+    search "shell_exec" \
+    'shell_exec(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "shell_exec\s{0,$WILDCARD_SHORT}\(" \
+    "2_php_shell_exec.txt" \
+    "-i"
 fi
 
 #The HTML specific stuff
@@ -3178,13 +3185,13 @@ if [ "$DO_C" = "true" ]; then
     'gets(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'gets\(' \
-    "2_c_insecure_c_functions_gets.txt"
+    "4_c_insecure_c_functions_gets.txt"
     
     search "Random is not a secure random number generator" \
     'random(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'random\(' \
-    "2_c_random.txt"
+    "3_c_random.txt"
     
 fi
 
@@ -3468,6 +3475,36 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     "net user.{0,$WILDCARD_LONG}/add" \
     "1_cryptocred_net_user_add.txt" \
     "-i"
+    
+    search "Adding a new user in batch scripts. Often found in bad-practice Windows batch scripts or log files." \
+    'AddUser bla' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "AddUser " \
+    "2_cryptocred_adduser1.txt"
+    
+    search "Adding a new user in bash scripts. Often found in bad-practice bash scripts or log files." \
+    'adduser bla' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "adduser " \
+    "2_cryptocred_adduser2.txt"
+    
+    search "Adding a new user in bash scripts. Often found in bad-practice bash scripts or log files." \
+    'useradd bla' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "useradd " \
+    "2_cryptocred_useradd.txt"
+    
+    search "Insecure registry file specifying that anonymous upload via FTP is possible." \
+    '"AllowAnonymous"=dword:00000001 and "AllowAnonymousUpload"=dword:00000001' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "AllowAnonymous.{0,$WILDCARD_SHORT}0001" \
+    "2_cryptocred_allowanonymous.txt"
+    
+    search "Disabled Authentication?" \
+    '"UseAuthentication"=dword:00000001' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "UseAuthentication" \
+    "2_cryptocred_useauthentication.txt"
     
     search "Credentials. Included everything 'creden' because some programers write credencials instead of credentials and such things." \
     'credentials=1234' \

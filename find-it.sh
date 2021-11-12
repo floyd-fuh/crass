@@ -156,6 +156,20 @@ if [ "$DO_FILE_COMMAND" = "true" ]; then
 fi
 
 if [ "$DO_FILEEXTENSION" = "true" ]; then
+	
+    OUTFILE="2_find_pfx.txt"
+    echo "# Info: All pfx files (certificates and private key) according to their file extension" >> $TARGET/$OUTFILE
+    echo "# Filename: $OUTFILE" >> "$TARGET/$OUTFILE"
+    echo "# Search: find -iname '*.pfx'" >> "$TARGET/$OUTFILE"
+    echo "Searching for results for $OUTFILE"
+    $FIND_COMMAND "$SEARCH_FOLDER" -iname '*.pfx' >> $TARGET/$OUTFILE
+	
+    OUTFILE="1_find_azure_publishsettings.txt"
+    echo "# Info: All publishsettings files (Azure settings file) according to their file extension" >> $TARGET/$OUTFILE
+    echo "# Filename: $OUTFILE" >> "$TARGET/$OUTFILE"
+    echo "# Search: find -iname '*.publishsettings'" >> "$TARGET/$OUTFILE"
+    echo "Searching for results for $OUTFILE"
+    $FIND_COMMAND "$SEARCH_FOLDER" -iname '*.publishsettings' >> $TARGET/$OUTFILE
 
     OUTFILE="4_find_class.txt"
     echo "# Info: All class files (decompilable!) according to their file extension" >> $TARGET/$OUTFILE
@@ -218,7 +232,7 @@ if [ "$DO_FILEEXTENSION" = "true" ]; then
     echo "# Filename: $OUTFILE" >> "$TARGET/$OUTFILE"
     echo "# Search: find | grep -v '.class|.jar|.php|.db|.htm|.js'" >> "$TARGET/$OUTFILE"
     echo "Searching for results for $OUTFILE"
-    $FIND_COMMAND "$SEARCH_FOLDER" | $GREP_COMMAND -v '.class|.jar|.php|.db|.c|.htm|.log|.js' >> $TARGET/$OUTFILE
+    $FIND_COMMAND "$SEARCH_FOLDER" | $GREP_COMMAND -v '.pfx|.publishsettings|.class|.jar|.php|.db|.c|.htm|.log|.js' >> $TARGET/$OUTFILE
 
 fi
 

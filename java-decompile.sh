@@ -15,7 +15,7 @@ then
   exit 0
 fi
 
-JD_CORE="/opt/jd-core/jd-core.jar"
+JD_CORE="/opt/jd-core-java/build/libs/jd-core-java-1.2.jar"
 
 if [ ! -f "$JD_CORE" ]
 then

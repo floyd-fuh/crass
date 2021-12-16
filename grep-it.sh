@@ -267,6 +267,13 @@ function test_run()
     #else
         #echo "PASS! $SEARCH_REGEX"
     fi
+    
+    echo "AAAAA" > "testing/temp_file.txt"
+    $GREP_COMMAND $ARGS_FOR_GREP $STANDARD_GREP_ARGUMENTS -- "$SEARCH_REGEX" "testing/temp_file.txt" > /dev/null
+    if [ $? -eq 0 ]; then
+        echo "FAIL! Five A ('AAAAA') also matched for regex $SEARCH_REGEX"
+    fi
+    
     #Second, check that the OUTFILE name is unique
     echo $DEBUG_TMP_OUTFILE_NAMES|$GREP_COMMAND -q $OUTFILE
     if [ $? -eq 0 ]; then
@@ -292,7 +299,7 @@ if [ "$DO_JAVA" = "true" ]; then
     search "All Strings between double quotes. Like the command line tool 'strings' for Java code, but only catches direct declaration and initialization, because otherwise this regex would take forever." \
     'String bla = "This is a Java String";' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'String\s[a-zA-Z_$][a-zA-Z0-9_$]{0,$WILDCARD_SHORT}\s?=\s?"[^"]{4,500}"' \
+    'String\s[a-zA-Z_$]{1,1}[a-zA-Z0-9_$]{0,25}\s?=\s?"[^"]{4,500}"' \
     "9_java_strings.txt" \
     "-o" #Special case, we only want to show the strings themselves, therefore -o to output the match only
     

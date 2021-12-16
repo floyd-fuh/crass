@@ -4616,7 +4616,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     search "Piping into the mail command is very dangerous, as it interpretes ~! as a command that should be executed, see https://research.securitum.com/fail2ban-remote-code-execution/" \
     'echo "test $userinput" | mail -s "subject" user@example.org' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "|\s{0,$WILDCARD_SHORT}mail" \
+    "\|\s{0,$WILDCARD_SHORT}mail" \
     "2_general_mail_pipe.txt" \
     "-i"
     

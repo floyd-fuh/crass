@@ -42,15 +42,16 @@
 ###
 
 #Which grep to use:
-#OSX:
+#Most people don't need to change this. Here's why:
+#It first looks for the following binary file:
 GREP_COMMAND="/opt/local/bin/ggrep"
-#Most other *nix (but there is a fallback to "grep" if the OSX one is not found...)
-#GREP_COMMAND="grep"
+#If that fails it will look for "ggrep" in $PATH
+#If that fails it will look for "grep" in $PATH
 #Do not remove -rP if you don't know what you are doing, otherwise you probably break this script
 GREP_ARGUMENTS="-n -A 1 -B 3 -rP"
 #my tests with a tool called ripgrep showed there is no real benefit in using it for this script... please go and proof me wrong
 
-#Open the colored outputs with "less -R" or cat, otherwise remove --color=always
+#Open the colored outputs with "less -R" or cat, otherwise remove --color=always (not recommended, colors help to find the matches in huge text files)
 COLOR_ARGUMENTS="--color=always"
 #Output folder if not otherwise specified on the command line
 TARGET="./grep-output"
@@ -173,9 +174,19 @@ fi
 
 if [ ! -f "$GREP_COMMAND" ]
 then
-    echo "WARNING: It seems your specified grep in $GREP_COMMAND does not exist, falling back to just 'grep'"
-    GREP_COMMAND="grep"
+    GREP_COMMAND="ggrep"
+    if ! command -v $GREP_COMMAND &> /dev/null
+    then
+        GREP_COMMAND="grep"
+        if ! command -v $GREP_COMMAND &> /dev/null
+        then
+            echo "Could not find a usable 'grep'"
+            exit 1
+        fi
+    fi
 fi
+
+echo "Using grep binary $GREP_COMMAND"
 
 STANDARD_GREP_ARGUMENTS="$GREP_ARGUMENTS $COLOR_ARGUMENTS"
 
@@ -1068,6 +1079,9 @@ fi
 
 #The FLEX Flash specific stuff
 if [ "$DO_FLEX" = "true" ]; then
+    
+    echo "#Doing FLEX Flash"
+    
     search 'Flex Flash has Security.allowDomain that should be tightly set and for sure not to *, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=flex' \
     'Security.allowDomain("*");' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -3951,11 +3965,14 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
 fi
 
 if [ "$DO_API_KEYS" = "true" ]; then
+    
+    echo "#Doing API keys"
+    
     search "Slack API keys" \
     'xoxp-683201246722-694612795216-829330901254-7ec6cd4f9686bc6dce91f9d81f717dbf' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "xox[p|b|o|a]-[0-9]{12}" \
-    "1_apikeys_slack.txt"
+    "3_apikeys_slack.txt"
 	
     search "Generic access token search" \
     '?access_token=' \
@@ -3967,13 +3984,355 @@ if [ "$DO_API_KEYS" = "true" ]; then
     '?AccessKeyId=' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "AccessKeyId" \
-    "2_apikeys_AccessKeyId.txt"
+    "3_apikeys_AccessKeyId.txt"
+    
+    search "AZURE_CLIENT_SECRET Azure environment variable" \
+    'AZURE_CLIENT_SECRET' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "AZURE_CLIENT_SECRET" \
+    "2_apikeys_AZURE_CLIENT_SECRET.txt"
+    
+    search "AZURE_CLIENT_ID Azure environment variable" \
+    'AZURE_CLIENT_ID' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "AZURE_CLIENT_ID" \
+    "3_apikeys_AZURE_CLIENT_ID.txt"
+    
+    search "AMAZON_AWS_SECRET_ACCESS_KEY AWS environment variable" \
+    'AMAZON_AWS_SECRET_ACCESS_KEY' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "AMAZON_AWS_SECRET_ACCESS_KEY" \
+    "2_apikeys_AMAZON_AWS_SECRET_ACCESS_KEY.txt"
+    
+    search "AWS_SECRET_ACCESS_KEY AWS environment variable" \
+    'AWS_SECRET_ACCESS_KEY' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "AWS_SECRET_ACCESS_KEY" \
+    "2_apikeys_AWS_SECRET_ACCESS_KEY.txt"
+    
+    search "AMAZON_AWS_ACCESS_KEY_ID AWS environment variable" \
+    'AMAZON_AWS_ACCESS_KEY_ID' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "AMAZON_AWS_ACCESS_KEY_ID" \
+    "3_apikeys_AMAZON_AWS_ACCESS_KEY_ID.txt"
+    
+    search "AWS_ACCESS_KEY_ID AWS environment variable" \
+    'AWS_ACCESS_KEY_ID' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "AWS_ACCESS_KEY_ID" \
+    "3_apikeys_AWS_ACCESS_KEY_ID.txt"
+    
+    search "AZURE_USERNAME environment variable" \
+    'AZURE_USERNAME' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "AZURE_USERNAME" \
+    "3_apikeys_AZURE_USERNAME.txt"
+
+    search "AZURE_PASSWORD environment variable" \
+    'AZURE_PASSWORD' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "AZURE_PASSWORD" \
+    "2_apikeys_AZURE_PASSWORD.txt"
+
+    search "MSI_ENDPOINT environment variable" \
+    'MSI_ENDPOINT' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "MSI_ENDPOINT" \
+    "3_apikeys_MSI_ENDPOINT.txt"
+
+    search "MSI_SECRET environment variable" \
+    'MSI_SECRET' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "MSI_SECRET" \
+    "2_apikeys_MSI_SECRET.txt"
+
+    search "binance_api environment variable" \
+    'binance_api' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "binance_api" \
+    "3_apikeys_binance_api.txt"
+
+    search "binance_secret environment variable" \
+    'binance_secret' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "binance_secret" \
+    "3_apikeys_binance_secret.txt"
+
+    search "BITTREX_API_KEY environment variable" \
+    'BITTREX_API_KEY' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "BITTREX_API_KEY" \
+    "3_apikeys_BITTREX_API_KEY.txt"
+
+    search "BITTREX_API_SECRET environment variable" \
+    'BITTREX_API_SECRET' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "BITTREX_API_SECRET" \
+    "3_apikeys_BITTREX_API_SECRET.txt"
+
+    search "CIRCLE_TOKEN environment variable" \
+    'CIRCLE_TOKEN' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "CIRCLE_TOKEN" \
+    "3_apikeys_CIRCLE_TOKEN.txt"
+
+    search "DIGITALOCEAN_ACCESS_TOKEN environment variable" \
+    'DIGITALOCEAN_ACCESS_TOKEN' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "DIGITALOCEAN_ACCESS_TOKEN" \
+    "3_apikeys_DIGITALOCEAN_ACCESS_TOKEN.txt"
+
+    search "DOCKERHUB_PASSWORD environment variable" \
+    'DOCKERHUB_PASSWORD' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "DOCKERHUB_PASSWORD" \
+    "2_apikeys_DOCKERHUB_PASSWORD.txt"
+
+    search "ITC_PASSWORD environment variable" \
+    'ITC_PASSWORD' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "ITC_PASSWORD" \
+    "2_apikeys_ITC_PASSWORD.txt"
+
+    search "FACEBOOK_APP_ID environment variable" \
+    'FACEBOOK_APP_ID' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "FACEBOOK_APP_ID" \
+    "3_apikeys_FACEBOOK_APP_ID.txt"
+
+    search "FACEBOOK_APP_SECRET environment variable" \
+    'FACEBOOK_APP_SECRET' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "FACEBOOK_APP_SECRET" \
+    "3_apikeys_FACEBOOK_APP_SECRET.txt"
+
+    search "FACEBOOK_ACCESS_TOKEN environment variable" \
+    'FACEBOOK_ACCESS_TOKEN' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "FACEBOOK_ACCESS_TOKEN" \
+    "3_apikeys_FACEBOOK_ACCESS_TOKEN.txt"
+
+    search "GH_TOKEN environment variable" \
+    'GH_TOKEN' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "GH_TOKEN" \
+    "3_apikeys_GH_TOKEN.txt"
+
+    search "GITHUB_TOKEN environment variable" \
+    'GITHUB_TOKEN' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "GITHUB_TOKEN" \
+    "3_apikeys_GITHUB_TOKEN.txt"
+
+    search "GH_ENTERPRISE_TOKEN environment variable" \
+    'GH_ENTERPRISE_TOKEN' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "GH_ENTERPRISE_TOKEN" \
+    "3_apikeys_GH_ENTERPRISE_TOKEN.txt"
+
+    search "GITHUB_ENTERPRISE_TOKEN environment variable" \
+    'GITHUB_ENTERPRISE_TOKEN' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "GITHUB_ENTERPRISE_TOKEN" \
+    "3_apikeys_GITHUB_ENTERPRISE_TOKEN.txt"
+
+    search "GOOGLE_APPLICATION_CREDENTIALS environment variable" \
+    'GOOGLE_APPLICATION_CREDENTIALS' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "GOOGLE_APPLICATION_CREDENTIALS" \
+    "3_apikeys_GOOGLE_APPLICATION_CREDENTIALS.txt"
+
+    search "GOOGLE_API_KEY environment variable" \
+    'GOOGLE_API_KEY' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "GOOGLE_API_KEY" \
+    "3_apikeys_GOOGLE_API_KEY.txt"
+
+    search "CI_DEPLOY_USER environment variable" \
+    'CI_DEPLOY_USER' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "CI_DEPLOY_USER" \
+    "3_apikeys_CI_DEPLOY_USER.txt"
+
+    search "CI_DEPLOY_PASSWORD environment variable" \
+    'CI_DEPLOY_PASSWORD' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "CI_DEPLOY_PASSWORD" \
+    "2_apikeys_CI_DEPLOY_PASSWORD.txt"
+
+    search "GITLAB_USER_LOGIN environment variable" \
+    'GITLAB_USER_LOGIN' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "GITLAB_USER_LOGIN" \
+    "3_apikeys_GITLAB_USER_LOGIN.txt"
+
+    search "CI_JOB_JWT environment variable" \
+    'CI_JOB_JWT' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "CI_JOB_JWT" \
+    "3_apikeys_CI_JOB_JWT.txt"
+
+    search "CI_JOB_JWT_V2 environment variable" \
+    'CI_JOB_JWT_V2' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "CI_JOB_JWT_V2" \
+    "3_apikeys_CI_JOB_JWT_V2.txt"
+
+    search "CI_JOB_TOKEN environment variable" \
+    'CI_JOB_TOKEN' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "CI_JOB_TOKEN" \
+    "3_apikeys_CI_JOB_TOKEN.txt"
+
+    search "MAILGUN_API_KEY environment variable" \
+    'MAILGUN_API_KEY' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "MAILGUN_API_KEY" \
+    "3_apikeys_MAILGUN_API_KEY.txt"
+
+    search "MCLI_PRIVATE_API_KEY environment variable" \
+    'MCLI_PRIVATE_API_KEY' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "MCLI_PRIVATE_API_KEY" \
+    "3_apikeys_MCLI_PRIVATE_API_KEY.txt"
+
+    search "MCLI_PUBLIC_API_KEY environment variable" \
+    'MCLI_PUBLIC_API_KEY' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "MCLI_PUBLIC_API_KEY" \
+    "3_apikeys_MCLI_PUBLIC_API_KEY.txt"
+
+    search "NPM_TOKEN environment variable" \
+    'NPM_TOKEN' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "NPM_TOKEN" \
+    "3_apikeys_NPM_TOKEN.txt"
+
+    search "OS_PASSWORD environment variable" \
+    'OS_PASSWORD' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "OS_PASSWORD" \
+    "2_apikeys_OS_PASSWORD.txt"
+
+    search "PERCY_TOKEN environment variable" \
+    'PERCY_TOKEN' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "PERCY_TOKEN" \
+    "3_apikeys_PERCY_TOKEN.txt"
+
+    search "SENTRY_AUTH_TOKEN environment variable" \
+    'SENTRY_AUTH_TOKEN' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "SENTRY_AUTH_TOKEN" \
+    "3_apikeys_SENTRY_AUTH_TOKEN.txt"
+
+    search "SLACK_TOKEN environment variable" \
+    'SLACK_TOKEN' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "SLACK_TOKEN" \
+    "3_apikeys_SLACK_TOKEN.txt"
+
+    search "square_access_token environment variable" \
+    'square_access_token' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "square_access_token" \
+    "3_apikeys_square_access_token.txt"
+
+    search "square_oauth_secret environment variable" \
+    'square_oauth_secret' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "square_oauth_secret" \
+    "2_apikeys_square_oauth_secret.txt"
+
+    search "STRIPE_API_KEY environment variable" \
+    'STRIPE_API_KEY' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "STRIPE_API_KEY" \
+    "3_apikeys_STRIPE_API_KEY.txt"
+
+    search "STRIPE_DEVICE_NAME environment variable" \
+    'STRIPE_DEVICE_NAME' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "STRIPE_DEVICE_NAME" \
+    "3_apikeys_STRIPE_DEVICE_NAME.txt"
+
+    search "TWILIO_ACCOUNT_SID environment variable" \
+    'TWILIO_ACCOUNT_SID' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "TWILIO_ACCOUNT_SID" \
+    "3_apikeys_TWILIO_ACCOUNT_SID.txt"
+
+    search "TWILIO_AUTH_TOKEN environment variable" \
+    'TWILIO_AUTH_TOKEN' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "TWILIO_AUTH_TOKEN" \
+    "2_apikeys_TWILIO_AUTH_TOKEN.txt"
+
+    search "CONSUMER_KEY environment variable" \
+    'CONSUMER_KEY' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "CONSUMER_KEY" \
+    "3_apikeys_CONSUMER_KEY.txt"
+
+    search "CONSUMER_SECRET environment variable" \
+    'CONSUMER_SECRET' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "CONSUMER_SECRET" \
+    "2_apikeys_CONSUMER_SECRET.txt"
+
+    search "TRAVIS_SUDO environment variable" \
+    'TRAVIS_SUDO' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "TRAVIS_SUDO" \
+    "3_apikeys_TRAVIS_SUDO.txt"
+
+    search "TRAVIS_OS_NAME environment variable" \
+    'TRAVIS_OS_NAME' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "TRAVIS_OS_NAME" \
+    "3_apikeys_TRAVIS_OS_NAME.txt"
+
+    search "TRAVIS_SECURE_ENV_VARS environment variable" \
+    'TRAVIS_SECURE_ENV_VARS' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "TRAVIS_SECURE_ENV_VARS" \
+    "3_apikeys_TRAVIS_SECURE_ENV_VARS.txt"
+
+    search "VAULT_TOKEN environment variable" \
+    'VAULT_TOKEN' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "VAULT_TOKEN" \
+    "3_apikeys_VAULT_TOKEN.txt"
+
+    search "VAULT_CLIENT_KEY environment variable" \
+    'VAULT_CLIENT_KEY' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "VAULT_CLIENT_KEY" \
+    "2_apikeys_VAULT_CLIENT_KEY.txt"
+
+    search "TOKEN environment variable" \
+    'TOKEN' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "TOKEN" \
+    "3_apikeys_TOKEN.txt"
+
+    search "VULTR_ACCESS environment variable" \
+    'VULTR_ACCESS' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "VULTR_ACCESS" \
+    "3_apikeys_VULTR_ACCESS.txt"
+
+    search "VULTR_SECRET environment variable" \
+    'VULTR_SECRET' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "VULTR_SECRET" \
+    "2_apikeys_VULTR_SECRET.txt"
 	
     search "Google OAUTH2 service account" \
     '"type": "service_account"' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "service_account" \
-    "2_apikeys_service_account.txt"
+    "3_apikeys_service_account.txt"
 	
     search "Github token" \
     '0GITHUB_TOKEN=' \
@@ -3999,6 +4358,8 @@ fi
 #Whatever you can usually find in a disassembly
 #This is a very experimental section...
 if [ "$DO_ASSEMBLY_NATIVE_API" = "true" ]; then
+    
+    echo "#Doing Assembly native"
 	
     search "Checking if sleep is hooked via Windows API by checking CPU clock delta to detect sandboxes (sandboxes such as Windows Defender hook sleep calls) via GetTickCount" \
     'call cs:GetTickCount' \

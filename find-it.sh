@@ -87,6 +87,7 @@ DO_FILE_NAME="true"
 #
 # TODO: 
 # - Delete files when find doesn't have a result. Find's exit code can't be used for that :(
+# - Find PKCS#12 files and their encryption: find code-from-bitbucket-modified -iname "*.jks" -exec echo % openssl pkcs12 -info -noout -nomacver -passin pass:unknown -in {} \; -exec openssl pkcs12 -info -noout -nomacver -passin pass:unknown -in {} \; 2>&1 |ggrep -v 'PKCS7 Data'|ggrep -v 'Error outputting keys and certificates'| grep -v 'error'
 
 if [ $# -lt 1 ]
 then
@@ -163,6 +164,34 @@ if [ "$DO_FILEEXTENSION" = "true" ]; then
     echo "# Search: find -iname '*.pfx'" >> "$TARGET/$OUTFILE"
     echo "Searching for results for $OUTFILE"
     $FIND_COMMAND "$SEARCH_FOLDER" -iname '*.pfx' >> $TARGET/$OUTFILE
+    
+    OUTFILE="2_find_p12.txt"
+    echo "# Info: All p12 files (certificates and private key) according to their file extension" >> $TARGET/$OUTFILE
+    echo "# Filename: $OUTFILE" >> "$TARGET/$OUTFILE"
+    echo "# Search: find -iname '*.p12'" >> "$TARGET/$OUTFILE"
+    echo "Searching for results for $OUTFILE"
+    $FIND_COMMAND "$SEARCH_FOLDER" -iname '*.p12' >> $TARGET/$OUTFILE
+    
+    OUTFILE="2_find_pem.txt"
+    echo "# Info: All pem files (certificates and private key) according to their file extension" >> $TARGET/$OUTFILE
+    echo "# Filename: $OUTFILE" >> "$TARGET/$OUTFILE"
+    echo "# Search: find -iname '*.pem'" >> "$TARGET/$OUTFILE"
+    echo "Searching for results for $OUTFILE"
+    $FIND_COMMAND "$SEARCH_FOLDER" -iname '*.pem' >> $TARGET/$OUTFILE
+    
+    OUTFILE="2_find_key.txt"
+    echo "# Info: All key files (private key) according to their file extension" >> $TARGET/$OUTFILE
+    echo "# Filename: $OUTFILE" >> "$TARGET/$OUTFILE"
+    echo "# Search: find -iname '*.key'" >> "$TARGET/$OUTFILE"
+    echo "Searching for results for $OUTFILE"
+    $FIND_COMMAND "$SEARCH_FOLDER" -iname '*.key' >> $TARGET/$OUTFILE
+    
+    OUTFILE="2_find_htpasswd.txt"
+    echo "# Info: All htpasswd files (web authorization passwords) according to their file name" >> $TARGET/$OUTFILE
+    echo "# Filename: $OUTFILE" >> "$TARGET/$OUTFILE"
+    echo "# Search: find -iname '*htpasswd*'" >> "$TARGET/$OUTFILE"
+    echo "Searching for results for $OUTFILE"
+    $FIND_COMMAND "$SEARCH_FOLDER" -iname '*htpasswd*' >> $TARGET/$OUTFILE
 	
     OUTFILE="1_find_azure_publishsettings.txt"
     echo "# Info: All publishsettings files (Azure settings file) according to their file extension" >> $TARGET/$OUTFILE

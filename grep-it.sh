@@ -33,6 +33,7 @@
 # - name of what we looked for
 #
 # Related work:
+# - You should definitely check out https://semgrep.dev/ but be aware that if you run the default example with --config=auto it will send metrics to their servers! Here's my first imperession of semgrep as of April 2022 https://twitter.com/floyd_ch/status/1513506364357853193
 # - https://www.owasp.org/index.php/Static_Code_Analysis
 # - https://samate.nist.gov/index.php/Source_Code_Security_Analyzers.html
 # - https://en.wikipedia.org/wiki/List_of_tools_for_static_code_analysis
@@ -143,7 +144,7 @@ DO_GENERAL="true"
 # - Have a look at/implement&reference rules:
 #  - Files starting with mod* at https://github.com/nccgroup/VCG/tree/master/VisualCodeGrepper 
 #  - http://findbugs.sourceforge.net/bugDescriptions.html
-#  - https://www.bishopfox.com/resources/downloads/
+#  - https://web.archive.org/web/20190110052404/https://bishopfox.com/resources/downloads/
 #  - https://pmd.github.io/
 #  - https://msdn.microsoft.com/en-us/library/aa449703.aspx
 #  - http://www.splint.org/
@@ -481,6 +482,12 @@ if [ "$DO_JAVA" = "true" ]; then
     "\.addHeader\(" \
     "5_java_http_addHeader.txt"
     
+    search "Java add Access-Control-Allow-Origin HTTP header, if set to * then authentication should not be done with authentication sharing mechanisms such as cookies in browsers" \
+    '.addHeader("Access-Control-Allow-Origin", "*")' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\.addHeader\(\"Access-Control-Allow-Origin" \
+    "3_java_http_addHeader_access_control_allow_origin.txt"    
+    
     search "Java get HTTP header" \
     '.getHeaders(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -673,11 +680,17 @@ if [ "$DO_JAVA" = "true" ]; then
     "7_java_confidential_data_in_strings_credit.txt" \
     "-i"
     
-    search "Attention: SSLSocketFactory means in general you will skip SSL hostname verification because the SSLSocketFactory can't know which protocol (HTTP/LDAP/etc.) and therefore can't lookup the hostname. Even Apache's HttpClient version 3 for Java is broken: see https://crypto.stanford.edu/~dabo/pubs/abstracts/ssl-client-bugs.html" \
+    search "SSLSocketFactory means in general you will skip SSL hostname verification because the SSLSocketFactory can't know which protocol (HTTP/LDAP/etc.) and therefore can't lookup the hostname. Even Apache's HttpClient version 3 for Java is broken: see https://crypto.stanford.edu/~dabo/pubs/abstracts/ssl-client-bugs.html" \
     'SSLSocketFactory' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'SSLSocketFactory' \
     "6_java_SSLSocketFactory.txt"
+    
+    search "Apache's NoopHostnameVerifier makes TLS verification ignore the hostname, which is obviously very bad and allow MITM" \
+    'import org.apache.http.conn.ssl.NoopHostnameVerifier' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'NoopHostnameVerifier' \
+    "3_java_NoopHostnameVerifier.txt"
     
     search "It's very easy to construct a backdoor in Java with Unicode \u characters, even within multi line comments, see http://pastebin.com/iGQhuUGd and https://plus.google.com/111673599544007386234/posts/ZeXvRCRZ3LF ." \
     '\u0041\u0042' \
@@ -1054,6 +1067,25 @@ if [ "$DO_SPRING" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'WebSecurityConfigurerAdapter' \
     "3_java_spring_WebSecurityConfigurerAdapter.txt"
+    
+    search "PasswordEncoder is to check user passwords in Spring (import org.springframework.security.crypto.password.PasswordEncoder)" \
+    'PasswordEncoder' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'PasswordEncoder' \
+    "3_java_spring_PasswordEncoder.txt"
+    
+    search "Spring getHeader to get HTTP header from a request" \
+    '.getHeader("foobar")' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\.getHeader\(" \
+    "5_java_spring_http_getHeader.txt"
+    
+    #Take care with the following regex, @ has a special meaning in double quoted strings, but not in single quoted strings
+    search "Check for Spring View Manipulation https://github.com/veracode-research/spring-view-manipulation/" \
+    '@GetMapping("/safe/redirect")' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '@GetMapping\(' \
+    "2_java_spring_view_manipulation.txt"
     
 fi
 
@@ -3686,6 +3718,13 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     "4_cryptocred_password.txt" \
     "-i"
     
+    search "Password verification methods, interesting to see if timing " \
+    'verifyPassword' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'verify.?pass.?wo?r?d' \
+    "3_cryptocred_verify_password.txt" \
+    "-i"
+    
     search "Encoded password and variants of it" \
     'encoded pw = 0x1234' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -4314,7 +4353,7 @@ if [ "$DO_API_KEYS" = "true" ]; then
     'TOKEN' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "TOKEN" \
-    "3_apikeys_TOKEN.txt"
+    "4_apikeys_TOKEN.txt"
 
     search "VULTR_ACCESS environment variable" \
     'VULTR_ACCESS' \
@@ -4332,7 +4371,7 @@ if [ "$DO_API_KEYS" = "true" ]; then
     '"type": "service_account"' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "service_account" \
-    "3_apikeys_service_account.txt"
+    "4_apikeys_service_account.txt"
 	
     search "Github token" \
     '0GITHUB_TOKEN=' \
@@ -4417,7 +4456,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     'sudo make me a sandwich' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "sudo\s" \
-    "2_general_sudo.txt"
+    "3_general_sudo.txt"
     
     search "Impersonate is often used in functionality which can be used to act as another user" \
     'impersonate' \
@@ -4488,31 +4527,31 @@ if [ "$DO_GENERAL" = "true" ]; then
     'place = "/usr/bin/softwareupdate"' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "[\"']/usr/" \
-    "3_general_usr_dir.txt"
+    "4_general_usr_dir.txt"
     
     search "Search for binary paths or similar: Command execution?" \
     'place = "/opt/bin/softwareupdate"' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "[\"']/opt/" \
-    "3_general_opt_dir.txt"
+    "4_general_opt_dir.txt"
     
     search "Search for binary paths or similar: Command execution?" \
     'place = "/bin/softwareupdate"' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "[\"']/bin/" \
-    "3_general_bin_dir.txt"
+    "5_general_bin_dir.txt"
     
     search "Search for binary paths or similar: Command execution?" \
     'place = "/sbin/softwareupdate"' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "[\"']/sbin/" \
-    "3_general_sbin_dir.txt"
+    "4_general_sbin_dir.txt"
     
     search "Search for binary paths or similar: Command execution?" \
     'place = "/dev/softwareupdate"' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "[\"']/dev/" \
-    "3_general_dev_dir.txt"
+    "4_general_dev_dir.txt"
     
     search "Search for binary paths or similar: Command execution?" \
     'place = "/tmp/softwareupdate"' \
@@ -4816,7 +4855,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     'jdbc:mysql://localhost/test?password=ABC' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'jdbc:' \
-    "2_general_jdbc_uri.txt" \
+    "3_general_jdbc_uri.txt" \
     "-i"
     
     search "Generic database connection string for SQL server. See https://www.connectionstrings.com/sql-server/ for different connection strings." \
@@ -4907,19 +4946,19 @@ if [ "$DO_GENERAL" = "true" ]; then
     'XSS' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'XSS' \
-    "2_general_xss_uppercase.txt"
+    "4_general_xss_uppercase.txt"
     
     search "XSS. Sometimes refered in comments or variable names for code that should prevent it. If you find something interesting that is used for prevention in a framework, you might want to add another grep for that in this script." \
     'Xss' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'Xss' \
-    "2_general_xss_regularcase.txt"
+    "4_general_xss_regularcase.txt"
         
     search "XSS. Sometimes refered in comments or variable names for code that should prevent it. If you find something interesting that is used for prevention in a framework, you might want to add another grep for that in this script." \
     'xss' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'xss' \
-    "2_general_xss_lowercase.txt"
+    "4_general_xss_lowercase.txt"
     
     search "Clickjacking and variants of it. Sometimes refered in comments or variable names for code that should prevent it. If you find something interesting that is used for prevention in a framework, you might want to add another grep for that in this script." \
     'click-jacking' \
@@ -4932,25 +4971,25 @@ if [ "$DO_GENERAL" = "true" ]; then
     'xsrf' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "[xX]srf" \
-    "2_general_hacking_techniques_xsrf_regularcase.txt"
+    "4_general_hacking_techniques_xsrf_regularcase.txt"
 	
     search "XSRF/CSRF and variants of it. Sometimes refered in comments or variable names for code that should prevent it. If you find something interesting that is used for prevention in a framework, you might want to add another grep for that in this script." \
     'XSRF' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "XSRF" \
-    "2_general_hacking_techniques_xsrf_uppercase.txt"
+    "3_general_hacking_techniques_xsrf_uppercase.txt"
     
     search "XSRF/CSRF and variants of it. Sometimes refered in comments or variable names for code that should prevent it. If you find something interesting that is used for prevention in a framework, you might want to add another grep for that in this script." \
     'csrf' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "[cC]srf" \
-    "2_general_hacking_techniques_csrf_regularcase.txt"
+    "4_general_hacking_techniques_csrf_regularcase.txt"
 	
     search "XSRF/CSRF and variants of it. Sometimes refered in comments or variable names for code that should prevent it. If you find something interesting that is used for prevention in a framework, you might want to add another grep for that in this script." \
     'CSRF' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "CSRF" \
-    "2_general_hacking_techniques_csrf_uppercase.txt"
+    "3_general_hacking_techniques_csrf_uppercase.txt"
     
     search "Buffer overflow and variants of it. Sometimes refered in comments or variable names for code that should prevent it. If you find something interesting that is used for prevention in a framework, you might want to add another grep for that in this script." \
     'buffer-overflow' \

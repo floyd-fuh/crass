@@ -31,10 +31,8 @@ if [ $# -eq 1 ]; then
     
     echo "[+] Invoking ./bloat-it.sh \"$DIR_MODIFIED\""
     ./bloat-it.sh "$DIR_MODIFIED"
-    echo "Info: We are not cleaning (clean-it.sh) when analyzing one directory (but when diffing two), because important info might get lost. See this message in main.sh."
-    #You can uncomment this to clean the directory
-    #echo "[+] Invoking ./clean-it.sh \"$DIR_MODIFIED\""
-    #./clean-it.sh "$DIR_MODIFIED"
+    echo "[+] Invoking ./clean-it.sh \"$DIR_MODIFIED\""
+    ./clean-it.sh "$DIR_MODIFIED"
     echo "[+] Invoking ./find-it.sh \"$DIR_MODIFIED\""
     ./find-it.sh "$DIR_MODIFIED" "./find-output-modified"
     echo "[+] Invoking ./grep-it.sh \"$DIR_MODIFIED\""
@@ -42,10 +40,19 @@ if [ $# -eq 1 ]; then
     echo "[+] Invoking ./extract-it.sh \"$DIR_MODIFIED\""
     ./extract-it.sh "$DIR_MODIFIED" "./extract-output-modified"
     
+    echo "[+] You can now start analyzing the '-modified' directories, we're finished with those."
+    echo "[+] Now also applying to non-modified dir, if you don't get satisfactory result in the modified, look at those results without such a suffix"
+    echo "[+] Invoking ./find-it.sh \"$DIR\""
+    ./find-it.sh "$DIR"
+    echo "[+] Invoking ./grep-it.sh \"$DIR\""
+    ./grep-it.sh "$DIR"
+    echo "[+] Invoking ./extract-it.sh \"$DIR\""
+    ./extract-it.sh "$DIR"
+    
+    echo "[+] Ended analysis of $1"
     echo "[+] Might be better if you do this manually:"
     echo "rm -r \"$DIR_MODIFIED\""
-
-    echo "[+] Ended analysis of $1"
+    
     
 elif [ $# -eq 2 ]; then
     echo "[+] Starting analysis of $1 and $2"

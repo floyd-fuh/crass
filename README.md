@@ -13,7 +13,7 @@ It should usually be used when you don't know where to start or when it's just w
 Where to start
 -------
 
-If you've never used CRASS before you should try grep-it.sh (currently the main focus of the project). Customize the OPTIONS section of the file. If you are on Linux, you should for example change GREP_COMMAND to "grep" instead of "/opt/local/bin/grep". The rest should be fine for a first run.
+If you've never used CRASS before you should try grep-it.sh (currently the main focus of the project). Customize the OPTIONS section of the file. Most things should be fine for a first run though. Afterwards try main.sh.
 
 Contents of the project
 -------
@@ -30,8 +30,8 @@ By now the tool is also able to analyze directories full of unknown things a bit
 
 Some characteristics:
 * The scripts can be run independently (it is important to keep it this way). main.sh is showing what the idea of using them all together is.
-* Tested under MAC OSX (with gnu-grep from mac ports). You should customize the defined variables on the first few line in each script.
+* Tested under MAC OSX (with gnu-grep aka ggrep from mac ports), but got good feedback from Linux users too. You should customize the defined variables on the first few line in each script.
 
 Contributions
 -------
-Are very welcome, either as issue reports or as pull requests. I know the user experience with everything except grep-it.sh is probably not that great, hope to find time to change that. What would be helpful too is if you can let me know if one of the regex in grep-it.sh was helpful for a certain purpose, so we can improve the comments. 
+Are very welcome, either as issue reports or as pull requests. I know the user experience with everything except grep-it.sh is not perfect, hope to find time to change that. What would be helpful too is if you can let me know if one of the regex in grep-it.sh was helpful for a certain purpose, so we can improve the comments. 

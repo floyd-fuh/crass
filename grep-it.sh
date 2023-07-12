@@ -621,63 +621,63 @@ if [ "$DO_JAVA" = "true" ]; then
     'String password' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "string .{0,$WILDCARD_SHORT}password" \
-    "7_java_confidential_data_in_strings_password.txt" \
+    "9_java_confidential_data_in_strings_password.txt" \
     "-i"
     
     search "Especially for high security applications. From http://docs.oracle.com/javase/1.5.0/docs/guide/security/jce/JCERefGuide.html#PBEEx : \"It would seem logical to collect and store the password in an object of type java.lang.String. However, here's the caveat: Objects of type String are immutable, i.e., there are no methods defined that allow you to change (overwrite) or zero out the contents of a String after usage. This feature makes String objects unsuitable for storing security sensitive information such as user passwords. You should always collect and store security sensitive information in a char array instead.\" " \
     'String secret' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "string .{0,$WILDCARD_SHORT}secret" \
-    "7_java_confidential_data_in_strings_secret.txt" \
+    "9_java_confidential_data_in_strings_secret.txt" \
     "-i"
     
     search "Especially for high security applications. From http://docs.oracle.com/javase/1.5.0/docs/guide/security/jce/JCERefGuide.html#PBEEx : \"It would seem logical to collect and store the password in an object of type java.lang.String. However, here's the caveat: Objects of type String are immutable, i.e., there are no methods defined that allow you to change (overwrite) or zero out the contents of a String after usage. This feature makes String objects unsuitable for storing security sensitive information such as user passwords. You should always collect and store security sensitive information in a char array instead.\" " \
     'String key' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "string .{0,$WILDCARD_SHORT}key" \
-    "7_java_confidential_data_in_strings_key.txt" \
+    "9_java_confidential_data_in_strings_key.txt" \
     "-i"
     
     search "Especially for high security applications. From http://docs.oracle.com/javase/1.5.0/docs/guide/security/jce/JCERefGuide.html#PBEEx : \"It would seem logical to collect and store the password in an object of type java.lang.String. However, here's the caveat: Objects of type String are immutable, i.e., there are no methods defined that allow you to change (overwrite) or zero out the contents of a String after usage. This feature makes String objects unsuitable for storing security sensitive information such as user passwords. You should always collect and store security sensitive information in a char array instead.\" " \
     'String cvv' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "string .{0,$WILDCARD_SHORT}cvv" \
-    "7_java_confidential_data_in_strings_cvv.txt" \
+    "9_java_confidential_data_in_strings_cvv.txt" \
     "-i"
     
     search "Especially for high security applications. From http://docs.oracle.com/javase/1.5.0/docs/guide/security/jce/JCERefGuide.html#PBEEx : \"It would seem logical to collect and store the password in an object of type java.lang.String. However, here's the caveat: Objects of type String are immutable, i.e., there are no methods defined that allow you to change (overwrite) or zero out the contents of a String after usage. This feature makes String objects unsuitable for storing security sensitive information such as user passwords. You should always collect and store security sensitive information in a char array instead.\" " \
     'String user' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "string .{0,$WILDCARD_SHORT}user" \
-    "7_java_confidential_data_in_strings_user.txt" \
+    "9_java_confidential_data_in_strings_user.txt" \
     "-i"
     
     search "Especially for high security applications. From http://docs.oracle.com/javase/1.5.0/docs/guide/security/jce/JCERefGuide.html#PBEEx : \"It would seem logical to collect and store the password in an object of type java.lang.String. However, here's the caveat: Objects of type String are immutable, i.e., there are no methods defined that allow you to change (overwrite) or zero out the contents of a String after usage. This feature makes String objects unsuitable for storing security sensitive information such as user passwords. You should always collect and store security sensitive information in a char array instead.\" " \
     'String passcode' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "string .{0,$WILDCARD_SHORT}passcode" \
-    "7_java_confidential_data_in_strings_passcode.txt" \
+    "9_java_confidential_data_in_strings_passcode.txt" \
     "-i"
     
     search "Especially for high security applications. From http://docs.oracle.com/javase/1.5.0/docs/guide/security/jce/JCERefGuide.html#PBEEx : \"It would seem logical to collect and store the password in an object of type java.lang.String. However, here's the caveat: Objects of type String are immutable, i.e., there are no methods defined that allow you to change (overwrite) or zero out the contents of a String after usage. This feature makes String objects unsuitable for storing security sensitive information such as user passwords. You should always collect and store security sensitive information in a char array instead.\" " \
     'String passphrase' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "string .{0,$WILDCARD_SHORT}passphrase" \
-    "7_java_confidential_data_in_strings_passphrase.txt" \
+    "9_java_confidential_data_in_strings_passphrase.txt" \
     "-i"
     
     search "Especially for high security applications. From http://docs.oracle.com/javase/1.5.0/docs/guide/security/jce/JCERefGuide.html#PBEEx : \"It would seem logical to collect and store the password in an object of type java.lang.String. However, here's the caveat: Objects of type String are immutable, i.e., there are no methods defined that allow you to change (overwrite) or zero out the contents of a String after usage. This feature makes String objects unsuitable for storing security sensitive information such as user passwords. You should always collect and store security sensitive information in a char array instead.\" " \
     'String pin' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "string .{0,$WILDCARD_SHORT}pin" \
-    "7_java_confidential_data_in_strings_pin.txt" \
+    "9_java_confidential_data_in_strings_pin.txt" \
     "-i"
     
     search "Especially for high security applications. From http://docs.oracle.com/javase/1.5.0/docs/guide/security/jce/JCERefGuide.html#PBEEx : \"It would seem logical to collect and store the password in an object of type java.lang.String. However, here's the caveat: Objects of type String are immutable, i.e., there are no methods defined that allow you to change (overwrite) or zero out the contents of a String after usage. This feature makes String objects unsuitable for storing security sensitive information such as user passwords. You should always collect and store security sensitive information in a char array instead.\" " \
     'String creditcard_number' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "string .{0,$WILDCARD_SHORT}credit" \
-    "7_java_confidential_data_in_strings_credit.txt" \
+    "9_java_confidential_data_in_strings_credit.txt" \
     "-i"
     
     search "SSLSocketFactory means in general you will skip SSL hostname verification because the SSLSocketFactory can't know which protocol (HTTP/LDAP/etc.) and therefore can't lookup the hostname. Even Apache's HttpClient version 3 for Java is broken: see https://crypto.stanford.edu/~dabo/pubs/abstracts/ssl-client-bugs.html" \
@@ -1156,6 +1156,12 @@ if [ "$DO_DOTNET" = "true" ]; then
     
     echo "#Doing .NET"
     
+    search ".NET SqlCommand which is used to do SQL queries, check for SQL injection" \
+    'new SqlCommand(query, conn)' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "new\sSqlCommand" \
+    "2_dotnet_sqlcommand.txt"
+    
     search ".NET View state enable" \
     'EnableViewState' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -1196,7 +1202,13 @@ if [ "$DO_DOTNET" = "true" ]; then
     'new TripleDESCryptoServiceProvider();' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "TripleDESCryptoServiceProvider" \
-    "4_dotnet_TripleDESCryptoServiceProvider.txt"
+    "2_dotnet_TripleDESCryptoServiceProvider.txt"
+    
+    search "TripleDES., see https://stackoverflow.com/questions/45521363/encrypt-in-net-core-with-tripledes" \
+    'System.Security.Cryptography.TripleDES.Create()' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "TripleDES" \
+    "3_dotnet_TripleDES.txt"
     
     search "unchecked allows to disable exceptions for integer overflows, see https://sonarqube.com/coding_rules#types=VULNERABILITY|languages=cs" \
     'int d = unchecked(list.Sum()); or also as a block unchecked { int e = list.Sum(); }' \
@@ -1298,7 +1310,13 @@ if [ "$DO_DOTNET" = "true" ]; then
     'string.Format("SELECT * FROM [a].[b] ab ORDER BY {0} {1} OFFSET {2} ROWS FETCH NEXT {3} ROWS ONLY;", new object[4]{(object) x, (object) y, (object) z, (object) u});' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "string\.Format\(.{0,$WILDCARD_SHORT}SELECT.{0,$WILDCARD_LONG}FROM" \
-    "1_dotnet_stringformat_sqli.txt" \
+    "1_dotnet_stringformat_sqli.txt"
+    
+    search "Variatons of SQL injection found in a web application the wild: Using string format instead of SqlParameter leading to non-prepared SQL statement which is later executed" \
+    'string.Format("SELECT * FROM [a].[b] ab ORDER BY {0} {1} OFFSET {2} ROWS FETCH NEXT {3} ROWS ONLY;", new object[4]{(object) x, (object) y, (object) z, (object) u});' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "format.{0,$WILDCARD_SHORT}SELECT.{0,$WILDCARD_LONG}FROM" \
+    "3_dotnet_stringformat_sqli2.txt" \
     "-i"
     
     search "SuppressUnmanagedCodeSecurityAttribute, see https://msdn.microsoft.com/en-us/library/ms182311(v=vs.80).aspx" \
@@ -1758,6 +1776,42 @@ fi
 if [ "$DO_JAVASCRIPT" = "true" ]; then
     
     echo "#Doing JavaScript"
+    
+    search "Object.assign might create Prototype poisioning vulnerabilities (exploited by sending __proto__ attributes) on the Node.js server if the input is user controlled." \
+    'Object.assign' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'Object.assign' \
+    "2_js_object_assign.txt"
+    
+    search "CloneDeep might create Prototype poisioning vulnerabilities (exploited by sending __proto__ attributes) on the Node.js server if the input is user controlled." \
+    '.cloneDeep(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.cloneDeep\(' \
+    "2_js_cloneDeep.txt"
+    
+    search "cloneDeepWith might create Prototype poisioning vulnerabilities (exploited by sending __proto__ attributes) on the Node.js server if the input is user controlled." \
+    '.cloneDeepWith(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.cloneDeepWith\(' \
+    "2_js_cloneDeepWith.txt"
+    
+    search "set might create Prototype poisioning vulnerabilities (exploited by sending __proto__ attributes) on the Node.js server if the input is user controlled." \
+    '.set(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.set\(' \
+    "2_js_set.txt"
+    
+    search "zipObjectDeep might create Prototype poisioning vulnerabilities (exploited by sending __proto__ attributes) on the Node.js server if the input is user controlled." \
+    '.zipObjectDeep(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.zipObjectDeep\(' \
+    "2_js_zipObjectDeep.txt"
+    
+    search "defaultsDeep might create Prototype poisioning vulnerabilities (exploited by sending __proto__ attributes) on the Node.js server if the input is user controlled." \
+    '.defaultsDeep(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.defaultsDeep\(' \
+    "2_js_defaultsDeep.txt"
     
     search "Location hash: DOM-based XSS source/sink." \
     'location.hash' \
@@ -3383,6 +3437,12 @@ if [ "$DO_C" = "true" ]; then
     'realloc\(' \
     "5_c_realloc.txt"
     
+    search "alloca function should not be used as the memory returned might not be usable properly." \
+    'alloca(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'alloca\(' \
+    "2_c_alloca.txt"
+    
     search "Buffer overflows and format string vulnerable methods: memcpy" \
     'memcpy(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -3413,11 +3473,35 @@ if [ "$DO_C" = "true" ]; then
     'strcpy\(' \
     "2_c_insecure_c_functions_strcpy.txt"
 	
-    search "Buffer overflows and format string vulnerable methods: strcpy --> strlcpy" \
+    search "Buffer overflows and format string vulnerable methods: strcpy --> strlcpy and family such as stpncpy" \
     'strncpy(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'strncpy\(' \
+    'st[rp][nl]cpy\(' \
     "5_c_insecure_c_functions_strncpy.txt"
+    
+    search "Buffer overflows and format string vulnerable methods: wcscat" \
+    'wcscat(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'wcscat\(' \
+    "2_c_insecure_c_functions_wcscat.txt"
+    
+    search "Buffer overflows and format string vulnerable methods: wcscpy, wcpcpy" \
+    'wcscpy(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'wc[sp]cpy\(' \
+    "2_c_insecure_c_functions_wcscpy.txt"
+    
+    search "Buffer overflows and format string vulnerable methods: printf --> snprintf" \
+    ' printf(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '[^snf]printf\(' \
+    "3_c_insecure_c_functions_printf.txt"
+    
+    search "Buffer overflows and format string vulnerable methods: printk" \
+    ' printk(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'printk\(' \
+    "3_c_insecure_c_functions_printk.txt"
     
     search "Buffer overflows and format string vulnerable methods: sprintf --> snprintf, vsprintf --> vsnprintf" \
     'sprintf(' \
@@ -3455,6 +3539,24 @@ if [ "$DO_C" = "true" ]; then
     'scanf\(' \
     "2_c_insecure_c_functions_scanf.txt"
     
+    search "Buffer overflows and format string vulnerable methods: warn() and warnx() family such as vwarnx()." \
+    'warn(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'warnx?c?\(' \
+    "4_c_insecure_c_functions_warnx.txt"
+    
+    search "Buffer overflows and format string vulnerable methods: syslog() family such as vsyslog()." \
+    'syslog(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'syslog\(' \
+    "4_c_insecure_c_functions_syslog.txt"
+    
+    search "Buffer overflows and format string vulnerable methods: err() family such as verrx()." \
+    'verrx(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'errx?c?\(' \
+    "4_c_insecure_c_functions_err.txt"
+    
     search "Buffer overflows and format string vulnerable methods: gets --> fgets" \
     'gets(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -3467,6 +3569,54 @@ if [ "$DO_C" = "true" ]; then
     'random\(' \
     "5_c_random.txt"
     
+    search "setuid calls. " \
+    'setuid()' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "sete?uid" \
+    "3_c_setuid.txt"
+    
+    search "setgid calls. " \
+    'setgid()' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "sete?gid" \
+    "3_c_setgid.txt"
+    
+    search "access calls check a resource, but there might be time of check time of use (TOCTOU) issues" \
+    'access()' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "access\(" \
+    "3_c_access.txt"
+    
+    search "stat and lstat calls check a resource, but there might be time of check time of use (TOCTOU) issues" \
+    'stat()' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "stat\(" \
+    "3_c_stat.txt"
+    
+    search "atoi, atol, atof have undefined behavior when the conversion resulted in an error. Use the strtol etc. functions instead" \
+    'atoi()' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "ato[ifl]\(" \
+    "3_c_atoi_atof_atol.txt"
+    
+    search "mktemp, tmpnam, tmpnam temporary files often create permission or time of check time of use (TOCTOU) issues" \
+    'mktemp()' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "mktemp\(" \
+    "3_c_mktemp.txt"
+    
+    search "mktemp, tmpnam, tempnam temporary files often create permission or time of check time of use (TOCTOU) issues" \
+    'tmpnam()' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "te?mpnam\(" \
+    "3_c_tmpnam.txt"
+    
+    search "wolfTPM2 in an embedded device is used to do TPM interactions. For example wolfTPM2_CreateAndLoadKey is a function called to load the TPM key Check if the password is hard-coded." \
+    'wolfTPM2_' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "wolfTPM2?_" \
+    "2_c_wolftpm.txt"
+    
 fi
 
 if [ "$DO_MALWARE_DETECTION" = "true" ]; then
@@ -3478,13 +3628,6 @@ if [ "$DO_MALWARE_DETECTION" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'viagra' \
     "5_malware_viagra.txt" \
-    "-i"
-    
-    search "Potenzmittel is the German word mostly used for viagra" \
-    'potenzmittel' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'potenzmittel' \
-    "5_malware_potenzmittel.txt" \
     "-i"
     
     search "Pharmacy" \
@@ -3756,6 +3899,26 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     'Pwd' \
     "5_cryptocred_pwd_capitalcase.txt"
     
+    search "PassPhrase and similar for encryption keys and passwords" \
+    'PassPhrase = "Bl1ck";' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'PassPhrase =' \
+    "2_cryptocred_passphrase.txt"
+    
+    search "PassPhrase and similar for encryption keys and passwords" \
+    'PassPhrase = "Bl1ck";' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'PassPhrase' \
+    "4_cryptocred_passphrase_generic.txt" \
+    "-i"
+    
+    search "We've seen too many hard-coded encryption keys, often in the form [...]somethingKey = new byte[...] so this is a generic search that will match .NET and Java stuff" \
+    'private static readonly byte[] loginCookieKey = new byte[8] { 78, 1, 37, 44, 7, 2, 52, 48 };' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "key.{0,$WILDCARD_SHORT}=.{0,$WILDCARD_SHORT}new byte" \
+    "2_cryptocred_key_new_byte.txt" \
+    "-i"
+        
     search "The Windows cmd.exe of adding a new user with a password written directly into the cmd.exe. Often found in bad-practice Windows batch scripts or log files." \
     'net user ALongUserNameExampleHere ALongPaSSwOrdExampleHere /add' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -4640,6 +4803,20 @@ if [ "$DO_GENERAL" = "true" ]; then
     "5_general_chmod.txt" \
     "-i"
     
+    search "Ansible credentials?" \
+    'ansible_user' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "ansible_" \
+    "4_general_ansible_credentials.txt" \
+    "-i"
+    
+    search "Ansible lineinfile or replace command replaces via regexp certain values in Ansible. If it replaces a password, the 'no_log: true' is important to be set to make sure the password is not going into the ansible log." \
+    'replace: "{{something_password}}"' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "replace: .{0,$WILDCARD_SHORT}pass" \
+    "3_general_ansible_replace.txt" \
+    "-i"
+    
     search "Session timeouts should be reasonable short for things like sessions for web logins but can also lead to denial of service conditions in other cases." \
     'session-timeout' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -4730,6 +4907,30 @@ if [ "$DO_GENERAL" = "true" ]; then
     'TODO' \
     "5_general_todo_uppercase.txt"
     
+    search "FIXME, unfinished and insecure things?" \
+    'FIXME:' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'FIXME' \
+    "5_general_fixme_uppercase.txt"
+    
+    search "LATER, unfinished and insecure things?" \
+    'LATER:' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'LATER' \
+    "5_general_later_uppercase.txt"
+    
+    search "BUG, unfinished, buggy and insecure things?" \
+    'BUG:' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'BUG' \
+    "5_general_bug_uppercase.txt"
+    
+    search "XXX, unfinished, buggy and insecure things?" \
+    'XXX:' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'XXX' \
+    "5_general_xxx_uppercase.txt"
+    
     search "Workarounds, maybe they work around security?" \
     'workaround: ' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -4797,7 +4998,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     search "URIs with authentication information specified as ://username:password@example.org" \
     'http://username:password@example.com' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "://[^ :/]{1,$WILDCARD_SHORT}:[^ :/]{1,$WILDCARD_SHORT}@" \
+    "://[^ @:/]{1,$WILDCARD_SHORT}:[^ @:/]{1,$WILDCARD_SHORT}@" \
     "1_general_uris_auth_info_narrow.txt" \
     "-i"
     
@@ -4805,7 +5006,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     search "URIs with authentication information specified as username:password@example.org" \
     'username:password@example.com' \
     'android:duration="@integer/animator_heartbeat_scaling_duration" or addObject:NSLocalizedString(@' \
-    "[^ \:/]{1,$WILDCARD_SHORT}:[^ \:/]{1,$WILDCARD_SHORT}@" \
+    "[^ @\:/]{1,$WILDCARD_SHORT}:[^ @\:/]{1,$WILDCARD_SHORT}@" \
     "2_general_uris_auth_info_wide.txt" \
     "-i"
     
@@ -4856,6 +5057,13 @@ if [ "$DO_GENERAL" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'jdbc:' \
     "3_general_jdbc_uri.txt" \
+    "-i"
+    
+    search "Variatons of SQL injection found in a web application the wild: Using string format instead of SqlParameter leading to non-prepared SQL statement which is later executed" \
+    '"SELECT * FROM [a].[b] ab ORDER BY %s"' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "SELECT.{0,$WILDCARD_LONG}FROM.{0,$WILDCARD_LONG}%s" \
+    "3_generic_sqli_stringformat.txt" \
     "-i"
     
     search "Generic database connection string for SQL server. See https://www.connectionstrings.com/sql-server/ for different connection strings." \

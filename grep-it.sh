@@ -94,12 +94,12 @@ DO_IOS="true"
 DO_PYTHON="true"
 DO_RUBY="true"
 
-DO_AZURE="true"
+DO_MICROSOFT="true"
+
+DO_GO="true"
 
 #C and derived languages
 DO_C="true"
-
-DO_MALWARE_DETECTION="true"
 
 DO_CRYPTO_AND_CREDENTIALS="true"
 
@@ -108,6 +108,10 @@ DO_API_KEYS="true"
 DO_ASSEMBLY_NATIVE_API="true"
 
 DO_GENERAL="true"
+
+# Backdoors, malware and "infected" machine patterns
+DO_BACKDOOR="true"
+
 
 ###
 #END OPTIONS
@@ -150,7 +154,7 @@ DO_GENERAL="true"
 #  - http://www.splint.org/
 
 #When the following flag is enable the tool switches to testing mode and won't do the actual work
-DEBUG_TEST_FLAG="false"
+DEBUG_TEST_FLAG="true"
 #A helper var for debugging purposes
 DEBUG_TMP_OUTFILE_NAMES=""
 
@@ -274,6 +278,8 @@ function test_run()
     $GREP_COMMAND $ARGS_FOR_GREP $STANDARD_GREP_ARGUMENTS -- "$SEARCH_REGEX" "testing/temp_file.txt" > /dev/null
     if [ $? -ne 0 ]; then
         echo "FAIL! $EXAMPLE was not matched for regex $SEARCH_REGEX"
+		echo "Command was:"
+		echo $GREP_COMMAND $ARGS_FOR_GREP $STANDARD_GREP_ARGUMENTS -- "$SEARCH_REGEX" "testing/temp_file.txt"
         echo "Test file content:"
         cat testing/temp_file.txt
     #else
@@ -314,7 +320,14 @@ if [ "$DO_JAVA" = "true" ]; then
     'String\s[a-zA-Z_$]{1,1}[a-zA-Z0-9_$]{0,25}\s?=\s?"[^"]{4,500}"' \
     "9_java_strings.txt" \
     "-o" #Special case, we only want to show the strings themselves, therefore -o to output the match only
-    
+	
+    search "For some old Java web applications this prints a perfect URL tree of accessible URLs of the web application API." \
+    ' @Path("blaBliBlaBlub")' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '@Path\("' \
+    "5_java_path.txt" \
+    "-h" #Special case, we only want to show the line without the file name
+	    
     search "All javax.crypto usage" \
     'import javax.crypto.bla;' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -359,13 +372,19 @@ if [ "$DO_JAVA" = "true" ]; then
     'KeyGenerator.getInstance(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'KeyGenerator\.getInstance\(' \
-    "5_java_crypto_keygenerator-getinstance.txt"
+    "3_java_crypto_keygenerator-getinstance.txt"
     
     search "Occurences of Cipher.getInstance(ALGORITHM) it's interesting to see where the key goes next, where it's stored or accidentially written to a log file. Make sure the cipher is secure." \
     'Cipher.getInstance("RSA/NONE/NoPadding");' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'Cipher\.getInstance\(' \
-    "5_java_crypto_cipher_getInstance.txt"
+    "3_java_crypto_cipher_getInstance.txt"
+	
+    search "Occurences of MessageDigest.getInstance(ALGORITHM) it's interesting to see where the key goes next, where it's stored or accidentially written to a log file. Make sure the cipher is secure." \
+    'MessageDigest.getInstance("RSA/NONE/NoPadding");' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'MessageDigest\.getInstance\(' \
+    "3_java_crypto_messagedigest_getInstance.txt"
     
     search "The Random class shouldn't be used for crypthography in Java, the SecureRandom should be used instead." \
     'Random random = new Random();' \
@@ -383,7 +402,28 @@ if [ "$DO_JAVA" = "true" ]; then
     'messagedigest' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'messagedigest' \
-    "5_java_crypto_messagedigest.txt" \
+    "4_java_crypto_messagedigest.txt" \
+    "-i"
+	
+    search "MessageDigest used to compare hashes in a time-constant manner" \
+    'java.security.MessageDigest.isEqual(msd1.digest(),msd2.digest());' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "MessageDigest\.isEqual\(" \
+    "3_java_messagedigest_isequal.txt" \
+    "-i"
+	
+    search "Hashes and passwords and such should be compared in a time-constant manner" \
+    'password.equals(config.password);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "password\.equals(IgnoreCase)?\(" \
+    "2_java_password_equals.txt" \
+    "-i"
+	
+    search "Hashes and passwords and such should be compared in a time-constant manner" \
+    'hash.equals(config.password);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "hash\.equals(IgnoreCase)?\(" \
+    "2_java_hash_equals.txt" \
     "-i"
     
     search "KeyPairGenerator, well, to generate key pairs, see http://docs.oracle.com/javase/7/docs/api/java/security/KeyPairGenerator.html . It's interesting to see where the key goes next, where it's stored or accidentially written to a log file." \
@@ -391,6 +431,30 @@ if [ "$DO_JAVA" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'KeyPairGenerator\(' \
     "5_java_crypto_keypairgenerator.txt"
+    
+    search "The parse method of the io.jsonwebtoken.JwtParser does not verify the cryptographic signature, see for example https://github.com/datahub-project/datahub/security/advisories/GHSA-r8gm-v65f-c973" \
+    'import io.jsonwebtoken.JwtParser;' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'io.jsonwebtoken.' \
+    "4_java_jsonwebtoken.txt"
+    
+    search "A likely pattern to introduce SSRF vulnerabilities is a string format with the :// protocol, see also https://github.blog/2023-03-03-github-security-lab-audited-datahub-heres-what-they-found/#ssrf-xss-ghsl-2022-076" \
+    'return _ws.url(String.format("%s://%s:%s%s"' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'String.format\("%s://' \
+    "4_java_string_format_ssrf.txt"
+    
+    search "A likely pattern to introduce JSON injection vulnerabilities is a string format which looks like it is creating JSON data, see also https://github.blog/2023-03-03-github-security-lab-audited-datahub-heres-what-they-found/#json-injection-ghsl-2022-080" \
+    'String json = String.format("{ \"%s\":\"%s\" }", USER_ID_FIELD, userId);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'String.format\("\{' \
+    "4_java_string_format_json.txt"
+    
+    search "Catch all exception is a no-go, see also https://github.blog/2023-03-03-github-security-lab-audited-datahub-heres-what-they-found/#login-fail-open-on-jaas-misconfiguration-ghsl-2022-081" \
+    '} catch (Exception e) {}' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'catch \(Exception e\) \{\}' \
+    "5_java_catch_all.txt"
     
     search "String comparisons have to be done with .equals() in Java, not with == (won't work). Attention: False positives often occur if you used a decompiler to get the Java code, additionally it's allowed in JavaScript." \
     '    toString(  )    ==' \
@@ -433,6 +497,24 @@ if [ "$DO_JAVA" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'equalsIgnoreCase\(' \
     "6_java_string_comparison_equalsIgnoreCase.txt"
+	
+    search "Executing native SQL query with Entity Manager could lead to SQL injection https://docs.oracle.com/javaee/7/api/javax/persistence/EntityManager.html" \
+    'this.entityManager.createQuery(this.foo).getResultList()' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\.createQuery\(" \
+    "3_java_sql_createQuery.txt"
+	
+    search "Executing native SQL query with Entity Manager could lead to SQL injection https://docs.oracle.com/javaee/7/api/javax/persistence/EntityManager.html" \
+    'this.entityManager.createStoredProcedureQuery(this.foo).getResultList()' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\.createStoredProcedureQuery\(" \
+    "3_java_sql_createStoredProcedureQuery(.txt"
+	
+    search "Executing native SQL query with Entity Manager could lead to SQL injection https://docs.oracle.com/javaee/7/api/javax/persistence/EntityManager.html" \
+    'this.entityManager.createNativeQuery(this.foo).getResultList()' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\.createNativeQuery\(" \
+    "2_java_sql_createNativeQuery.txt"
     
     search "The syntax for SQL executions start with execute and this should as well catch generic execute calls." \
     'executeBlaBla(' \
@@ -458,6 +540,12 @@ if [ "$DO_JAVA" = "true" ]; then
     "prepareStatement\(" \
     "6_java_sql_prepareStatement.txt"
     
+    search "SQL prepared statements, can go wrong if String.format a WHERE clause... as happened here (for graphql though): https://github.blog/2023-03-03-github-security-lab-audited-datahub-heres-what-they-found/#neo4js-cypher-injection-ghsl-2022-087" \
+    'whereClause = String.format(" WHERE %s", sourceTypes.stream().map(type -> "src:" + type).collect(Collectors.joining(" OR ")));' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    " WHERE %s" \
+    "6_java_sql_string_format_where.txt"
+    
     search "Method to set HTTP headers in Java" \
     '.setHeader(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -476,7 +564,7 @@ if [ "$DO_JAVA" = "true" ]; then
     "\.sendRedirect\(" \
     "5_java_http_sendRedirect.txt"
     
-    search "Java add HTTP header" \
+    search "Java add HTTP header, can lead to business logic errors such as https://github.blog/2023-03-03-github-security-lab-audited-datahub-heres-what-they-found/#system-account-impersonation-ghsl-2022-079" \
     '.addHeader(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.addHeader\(" \
@@ -686,18 +774,23 @@ if [ "$DO_JAVA" = "true" ]; then
     'SSLSocketFactory' \
     "6_java_SSLSocketFactory.txt"
     
-    search "Apache's NoopHostnameVerifier makes TLS verification ignore the hostname, which is obviously very bad and allow MITM" \
+    search "Apache's NoopHostnameVerifier makes TLS verification ignore the hostname, which is obviously bad and allow MITM" \
     'import org.apache.http.conn.ssl.NoopHostnameVerifier' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'NoopHostnameVerifier' \
-    "3_java_NoopHostnameVerifier.txt"
-    
-    search "It's very easy to construct a backdoor in Java with Unicode \u characters, even within multi line comments, see http://pastebin.com/iGQhuUGd and https://plus.google.com/111673599544007386234/posts/ZeXvRCRZ3LF ." \
-    '\u0041\u0042' \
+    "2_java_NoopHostnameVerifier.txt"
+	
+    search "OkHttpClient can be configured to make TLS verification ignore the hostname, which is obviously bad and allows MITM" \
+    'OkHttpClient.Builder().sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) certs[0]).hostnameVerifier((hostname, session) -> true).build();' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    '\\u00..\\u00..' \
-    "9_java_backdoor_as_unicode.txt" \
-    "-i"
+    '\.sslSocketFactory\(' \
+    "3_java_okhttpclient_sslsocketfactory.txt"
+	
+    search "OkHttpClient can be configured to make TLS verification ignore the hostname, which is obviously bad and allows MITM" \
+    'OkHttpClient.Builder().sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) certs[0]).hostnameVerifier((hostname, session) -> true).build();' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.hostnameVerifier\(' \
+    "3_java_okhttpclient_hostnameverifier.txt"
     
     search "CheckValidity method of X509Certificate in Java is a very confusing naming for developers new to SSL/TLS and has been used as the *only* check to see if a certificate is valid or not in the past. This method *only* checks the date-validity, see http://docs.oracle.com/javase/7/docs/api/java/security/cert/X509Certificate.html#checkValidity%28%29 : 'Checks that the certificate is currently valid. It is if the current date and time are within the validity period given in the certificate.'" \
     'paramArrayOfX509Certificate[0].checkValidity(); return;' \
@@ -758,7 +851,14 @@ if [ "$DO_JAVA" = "true" ]; then
     '@JsonProperty("version")' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '@JsonProperty\(' \
-    "4_java_jsonproperty_annotation.txt"
+    "3_java_jsonproperty_annotation.txt"
+    
+    #Take care with the following regex, @ has a special meaning in double quoted strings, but not in single quoted strings
+    search 'Setting values in Java objects from HTTP/JSON requests directly can be very dangerous. This is usually a flexjson binding, see https://flexjson.sourceforge.net/ . These properties might be secret inputs the server accepts, but are unlinked in the client side JavaScript code. For example imagine such an annotation on the username attribute of a User Java class. This would allow to fake the username by sending a username attribute in the JSON payload. Also check for arbitrary deserialisation, see https://www.synacktiv.com/en/publications/how-to-exploit-liferay-cve-2020-7961-quick-journey-to-poc.html .' \
+    '   @JSON' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '@JSON' \
+    "3_java_json_annotation.txt"
     
     #Take care with the following regex, @ has a special meaning in double quoted strings, but not in single quoted strings
     search 'Validation in Java can be done via certain @constraint' \
@@ -774,53 +874,95 @@ if [ "$DO_JAVA" = "true" ]; then
     '@SuppressLint' \
     "6_java_suppresslint.txt"
     
+    search 'Handling archive entries manually in Java is dangerous and can lead to path traversal and other vulnerabilities, see https://github.com/snyk/zip-slip-vulnerability, https://github.com/jwilk/traversal-archives https://www.pentagrid.ch/en/blog/archive-pwn-tool-release/ etc.' \
+    'ZipEntry e = entries.nextElement();' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'Zip(?:Archive)?Entry' \
+    "2_java_ZipEntry.txt"
+    
+    search 'Handling archive entries manually in Java is dangerous and can lead to path traversal and other vulnerabilities, see https://github.com/snyk/zip-slip-vulnerability, https://github.com/jwilk/traversal-archives https://www.pentagrid.ch/en/blog/archive-pwn-tool-release/ etc.' \
+    'TarArchiveEntry e = entries.nextElement();' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'Tar(?:Archive)?Entry' \
+    "2_java_TarEntry.txt"
+    
+    search 'Handling archive entries manually in Java is dangerous and can lead to path traversal and other vulnerabilities, see https://github.com/snyk/zip-slip-vulnerability, https://github.com/jwilk/traversal-archives https://www.pentagrid.ch/en/blog/archive-pwn-tool-release/ etc.' \
+    'SevenZArchiveEntry entry = entries.nextElement();' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'SevenZ(?:Archive)?Entry' \
+    "2_java_SevenZEntry.txt"
+    
+    search 'Handling archive entries manually in Java is dangerous and can lead to path traversal and other vulnerabilities, see https://github.com/snyk/zip-slip-vulnerability, https://github.com/jwilk/traversal-archives https://www.pentagrid.ch/en/blog/archive-pwn-tool-release/ etc.' \
+    'CpioEntry e = entries.nextElement();' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'Cpio(?:Archive)?Entry' \
+    "2_java_CpioEntry.txt"
+    
+    search 'Handling archive entries manually in Java is dangerous and can lead to path traversal and other vulnerabilities, see https://github.com/snyk/zip-slip-vulnerability, https://github.com/jwilk/traversal-archives https://www.pentagrid.ch/en/blog/archive-pwn-tool-release/ etc.' \
+    'CabFileEntry e = entries.nextElement();' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'CabFileEntry' \
+    "2_java_CabFileEntry.txt"
+    
+    search 'Handling archive entries manually in Java is dangerous and can lead to path traversal and other vulnerabilities, see https://github.com/snyk/zip-slip-vulnerability, https://github.com/jwilk/traversal-archives https://www.pentagrid.ch/en/blog/archive-pwn-tool-release/ etc.' \
+    'Example from https://github.com/junrar/junrar: FileHeader fileHeader = archive.nextFileHeader();' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.nextFileHeader\(' \
+    "3_java_nextFileHeader.txt"
+    
     search 'Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ and https://github.com/mbechler/marshalsec for example' \
     'new ObjectOutputStream(abc);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'new ObjectOutputStream' \
-    "5_java_serialization-objectOutputStream.txt"
+    "4_java_serialization-objectOutputStream.txt"
     
     search 'Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ and https://github.com/mbechler/marshalsec for example' \
     'abc.writeObject(def);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.writeObject\(' \
-    "5_java_serialization-writeObject.txt"
+    "4_java_serialization-writeObject.txt"
     
     search 'Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ and https://github.com/mbechler/marshalsec for example' \
     'abc.readObject(def);' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.readObject\(' \
-    "7_java_serialization-readObject.txt"
+    "4_java_serialization-readObject.txt"
         
     search 'Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ and https://github.com/mbechler/marshalsec for example' \
     ' @SerializedName("variableName")' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '@SerializedName\(' \
-    "5_java_serialization-SerializedName.txt"
+    "4_java_serialization-SerializedName.txt"
     
-    search 'Deserialization is something that can result in remote command execution, readResolve is a one of the Java APIs' \
+    search 'Deserialization is something that can result in remote command execution, readResolve is one of the Java APIs' \
     '.readResolve(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.readResolve\(' \
-    "5_java_serialization-readResolve.txt"
+    "4_java_serialization-readResolve.txt"
     
-    search 'Deserialization is something that can result in remote command execution, readExternal is a one of the Java APIs' \
+    search 'Deserialization is something that can result in remote command execution, readExternal is one of the Java APIs' \
     '.readExternal(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.readExternal\(' \
-    "5_java_serialization-readExternal.txt"
+    "4_java_serialization-readExternal.txt"
     
-    search 'Deserialization is something that can result in remote command execution, readUnshared is a one of the Java APIs' \
+    search 'Deserialization is something that can result in remote command execution, readUnshared is one of the Java APIs' \
     '.readUnshared(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.readUnshared\(' \
-    "5_java_serialization-readUnshared.txt"
+    "4_java_serialization-readUnshared.txt"
     
-    search 'Deserialization is something that can result in remote command execution, XStream is a one of the Java APIs' \
+    search 'Deserialization is something that can result in remote command execution, XStream is one of the Java APIs' \
     'XStream(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'XStream' \
-    "5_java_serialization-XStream.txt"
+    "4_java_serialization-XStream.txt"
+    
+    search 'Deserialization is something that can result in remote command execution, and this example has such a catchy name and happened in the wild that it might very well happen again: https://github.blog/2023-03-03-github-security-lab-audited-datahub-heres-what-they-found/#deserialization-of-untrusted-data-ghsl-2022-086' \
+    'return serializationHelper.unserializeFromBase64(sValue.substring(PREFIX_SB64.length()));' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'unserializeFromBase64' \
+    "3_java_unserializeFromBase64.txt"
     
     search 'Java serialized data? Usually Java serialized data in base64 format starts with rO0 or non-base64 with hex ACED0005. Deserialization is something that can result in remote command execution, there are various exploits for such things, see http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/ and https://github.com/mbechler/marshalsec for example' \
     'rO0ABXNyABpodWRzb24ucmVtb3RpbmcuQ2FwYWJpbGl0eQAAAAAAAAABAgABSgAEbWFza3hwAAAAAAAAAJP4=' \
@@ -949,6 +1091,24 @@ if [ "$DO_JAVA" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\.setSigningKey\(" \
     "3_java_jwt_setSigningKey.txt"
+	
+    search "JWT in com.auth0.jwt.JWT Java set the secret. JWT shouldn't be used with a secret, but with public/private keys." \
+    'Verification verifier = JWT.require(Algorithm.HMAC256(getJwtSignatureSecret()));' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "JWT\.require\(" \
+    "2_java_jwt_require.txt"
+	
+    search "Iterating through X509 certificates can be dangerous, e.g. when validating. You could get multiple chain of certificates. E.g. when validating client certificates, Java TLS only checks the first entry. See https://github.blog/security/vulnerability-research/mtls-when-certificate-authentication-is-done-wrong/" \
+    'for (X509Certificate cert : certificates) {' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "X509Certificate " \
+    "3_java_x509certificate.txt"
+	
+    search "Iterating through X509 certificates can be dangerous, e.g. when validating. You could get multiple chain of certificates. E.g. when validating client certificates, Java TLS only checks the first entry. See https://github.blog/security/vulnerability-research/mtls-when-certificate-authentication-is-done-wrong/" \
+    '.map(certificate -> certificate.getSubjectDN().getName())' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\.getSubjectDN\(" \
+    "3_java_getSubjectDN.txt"
     
 fi
 
@@ -1016,6 +1176,37 @@ if [ "$DO_JSP" = "true" ]; then
     "<s:file\s" \
     "4_java_jsp_file_upload.txt" \
     "-i"
+	
+    search "Server-Side Template Injection (SSTI) is a possibility at many places https://portswigger.net/web-security/server-side-template-injection and https://pequalsnp-team.github.io/cheatsheet/flask-jinja2-ssti . VelocityEngine is one of them in Java." \
+    "VelocityEngine velocityEngine = new VelocityEngine();" \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "VelocityEngine" \
+    "4_java_ssti_VelocityEngine.txt" \
+    "-i"
+	
+    search "Server-Side Template Injection (SSTI) is a possibility at many places https://portswigger.net/web-security/server-side-template-injection and https://pequalsnp-team.github.io/cheatsheet/flask-jinja2-ssti . VelocityEngine is one of them in Java." \
+    "Template t = velocityEngine.getTemplate(\"template.vm\");" \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\.getTemplate\(" \
+    "3_java_ssti_VelocityEngine_getTemplate.txt" \
+    "-i"
+	
+    search "Never String format a template for a template engine with user supplied input. Server-Side Template Injection (SSTI) is a possibility at many places https://portswigger.net/web-security/server-side-template-injection and https://pequalsnp-team.github.io/cheatsheet/flask-jinja2-ssti" \
+    "templateString = String.format(templateString, param);" \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "String\.format\(.{0,$WILDCARD_SHORT}template" \
+    "2_java_ssti_string_format_template.txt" \
+    "-i"
+	
+    search "New template, Server-Side Template Injection (SSTI) is a possibility at many places https://portswigger.net/web-security/server-side-template-injection and https://pequalsnp-team.github.io/cheatsheet/flask-jinja2-ssti" \
+    "Template template = new Template();" \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "new Template\(" \
+    "3_java_ssti_new_template.txt" \
+    "-i"
+	
+	
+	
 fi
 
 #The Java Spring specific stuff
@@ -1634,26 +1825,23 @@ if [ "$DO_PHP" = "true" ]; then
     "6_php_rand.txt" \
     "-i"
     
-    search "Extract can be dangerous and could be used as backdoor, see http://blog.sucuri.net/2014/02/php-backdoors-hidden-with-clever-use-of-extract-function.html#null" \
-    'extract(' \
+    search "The big problem with == is that in PHP (and some other languages), this comparison is not type safe. What you should always use is ===. For example a hash value that starts with 0E could be interpreted as an integer if you don't take care. There were real world bugs exploiting this issue already, think login form and comparing the hashed user password, what happens if you type in 0 as the password and brute force different usernames until a user has a hash which starts with 0E? Then there is also the question of different systems handling/doing Unicode Normalization (see for example https://gosecure.github.io/unicode-pentester-cheatsheet/ and https://www.gosecure.net/blog/2020/08/04/unicode-for-security-professionals/) or not: B\xC3\xBCcher and B\x75\xcc\x88cher is both UTF-8, but one is the character for a real Unicode u-Umlaut while the other is u[COMBINING DIAERESIS]. If the backend normalizes it could be that identifiers clash." \
+    'password_hash == PBKDF2(password_from_login_http_request)' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "extract\s{0,$WILDCARD_SHORT}\(" \
-    "5_php_extract.txt" \
-    "-i"
+    "hash ==[^=]" \
+    "2_php_type_unsafe_comparison_hash.txt"
     
-    search "Assert can be used as backdoor, see http://rileykidd.com/2013/08/21/the-backdoor-you-didnt-grep/" \
-    'assert(' \
+    search "The big problem with == is that in PHP (and some other languages), this comparison is not type safe. What you should always use is ===. For example a hash value that starts with 0E could be interpreted as an integer if you don't take care. There were real world bugs exploiting this issue already, think login form and comparing the hashed user password, what happens if you type in 0 as the password and brute force different usernames until a user has a hash which starts with 0E? Then there is also the question of different systems handling/doing Unicode Normalization (see for example https://gosecure.github.io/unicode-pentester-cheatsheet/ and https://www.gosecure.net/blog/2020/08/04/unicode-for-security-professionals/) or not: B\xC3\xBCcher and B\x75\xcc\x88cher is both UTF-8, but one is the character for a real Unicode u-Umlaut while the other is u[COMBINING DIAERESIS]. If the backend normalizes it could be that identifiers clash." \
+    'PBKDF2(password_from_login_http_request) == hash' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "assert\s{0,$WILDCARD_SHORT}\(" \
-    "6_php_assert.txt" \
-    "-i"
+    "[^=]== hash" \
+    "2_php_type_unsafe_comparison_hash_back.txt"
     
-    search "Preg_replace can be used as backdoor, see http://labs.sucuri.net/?note=2012-05-21" \
-    'preg_replace(' \
+    search "The big problem with == is that in PHP (and some other languages), this comparison is not type safe. What you should always use is ===. For example a hash value that starts with 0E could be interpreted as an integer if you don't take care. There were real world bugs exploiting this issue already, think login form and comparing the hashed user password, what happens if you type in 0 as the password and brute force different usernames until a user has a hash which starts with 0E? Then there is also the question of different systems handling/doing Unicode Normalization (see for example https://gosecure.github.io/unicode-pentester-cheatsheet/ and https://www.gosecure.net/blog/2020/08/04/unicode-for-security-professionals/) or not: B\xC3\xBCcher and B\x75\xcc\x88cher is both UTF-8, but one is the character for a real Unicode u-Umlaut while the other is u[COMBINING DIAERESIS]. If the backend normalizes it could be that identifiers clash." \
+    'PBKDF2(password_from_login_http_request) == password_hash' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "preg_replace\s{0,$WILDCARD_SHORT}\(" \
-    "6_php_preg_replace.txt" \
-    "-i"
+    "[^=]== pass" \
+    "2_php_type_unsafe_comparison_pass_back.txt"
     
     search "The big problem with == is that in PHP (and some other languages), this comparison is not type safe. What you should always use is ===. For example a hash value that starts with 0E could be interpreted as an integer if you don't take care. There were real world bugs exploiting this issue already, think login form and comparing the hashed user password, what happens if you type in 0 as the password and brute force different usernames until a user has a hash which starts with 0E? Then there is also the question of different systems handling/doing Unicode Normalization (see for example https://gosecure.github.io/unicode-pentester-cheatsheet/ and https://www.gosecure.net/blog/2020/08/04/unicode-for-security-professionals/) or not: B\xC3\xBCcher and B\x75\xcc\x88cher is both UTF-8, but one is the character for a real Unicode u-Umlaut while the other is u[COMBINING DIAERESIS]. If the backend normalizes it could be that identifiers clash." \
     'hashvalue_from_db == PBKDF2(password_from_login_http_request)' \
@@ -1799,7 +1987,7 @@ if [ "$DO_JAVASCRIPT" = "true" ]; then
     '.set(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     '\.set\(' \
-    "2_js_set.txt"
+    "5_js_set.txt"
     
     search "zipObjectDeep might create Prototype poisioning vulnerabilities (exploited by sending __proto__ attributes) on the Node.js server if the input is user controlled." \
     '.zipObjectDeep(' \
@@ -2019,6 +2207,14 @@ if [ "$DO_JAVASCRIPT" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "new .{0,$WILDCARD_SHORT}BrowserWindow\(" \
     "2_js_electron_BrowserWindow.txt"
+    
+    # NodeJS actually
+    search "When writing NodeJS applications with MySQL it is important to make sure the prepared queries are type-safe as in https://flatt.tech/research/posts/finding-an-unseen-sql-injection-by-bypassing-escape-functions-in-mysqljs-mysql/" \
+    'var mysql = require("mysql");' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "require\([\"']mysql" \
+    "2_js_require_mysql.txt"    
+    
 
 fi
 
@@ -2345,6 +2541,12 @@ if [ "$DO_ANDROID" = "true" ]; then
     '\.getData\(' \
     "5_android_intents_getData.txt"
     
+    search "Android get data from an intent" \
+    '.getStringExtra(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\.getStringExtra\(' \
+    "4_android_intents_getStringExtra.txt"
+    
     search "Java URI parsing. Often used in Android for an intent, where it is important to specify the receiving package with setPackage as well, so that no other app could receive the intent." \
     'Uri u = Uri.parse(scheme+"://somepath");' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -2457,7 +2659,7 @@ if [ "$DO_ANDROID" = "true" ]; then
     '/system/xbin/which' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "/system" \
-    "4_android_system_path.txt"
+    "5_android_system_path.txt"
     
     search "Often used in root-detection mechanisms." \
     'Superuser.apk' \
@@ -3205,7 +3407,7 @@ if [ "$DO_PYTHON" = "true" ]; then
     '2.2 * 3.0 == 3.3 * 2.2' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "\s{1,$WILDCARD_SHORT}==\s{1,$WILDCARD_SHORT}" \
-    "4_python_float_equality_general.txt"
+    "6_python_float_equality_general.txt"
     
     search "Double underscore variable visibility can be tricky, see https://access.redhat.com/blogs/766093/posts/2592591" \
     'self.__private' \
@@ -3296,6 +3498,43 @@ if [ "$DO_PYTHON" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "extra-index-url" \
     "2_python_extra_index_url.txt"
+	
+    search "Server-Side Template Injection (SSTI) is a possibility at many places https://portswigger.net/web-security/server-side-template-injection and https://pequalsnp-team.github.io/cheatsheet/flask-jinja2-ssti" \
+    "flask.render_template_string(source, **context)" \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\.render_template_string\(" \
+    "2_python_ssti_render_template_string.txt" \
+    "-i"
+	
+    search "Server-Side Template Injection (SSTI) is a possibility at many places https://portswigger.net/web-security/server-side-template-injection and https://pequalsnp-team.github.io/cheatsheet/flask-jinja2-ssti" \
+    "template = Template(\"{{ clever_function() }}\")" \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "Template\(.{0,$WILDCARD_LONG}\{\{" \
+    "2_python_ssti_template_narrow.txt" \
+    "-i"
+	
+    search "Server-Side Template Injection (SSTI) is a possibility at many places https://portswigger.net/web-security/server-side-template-injection and https://pequalsnp-team.github.io/cheatsheet/flask-jinja2-ssti" \
+    "template = Template(\"{{ clever_function() }}\")" \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "Template\(" \
+    "4_python_ssti_template_wide.txt" \
+    "-i"
+	
+    search "Server-Side Template Injection (SSTI) is a possibility at many places https://portswigger.net/web-security/server-side-template-injection and https://pequalsnp-team.github.io/cheatsheet/flask-jinja2-ssti" \
+    "template.render(\"{{foobar}}\")" \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\.render\(.{0,$WILDCARD_LONG}\{\{" \
+    "2_python_ssti_render_narrow.txt" \
+    "-i"
+	
+    search "Server-Side Template Injection (SSTI) is a possibility at many places https://portswigger.net/web-security/server-side-template-injection and https://pequalsnp-team.github.io/cheatsheet/flask-jinja2-ssti" \
+    "template.render(**fields)" \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\.render\(" \
+    "4_python_ssti_render_wide.txt" \
+    "-i"
+	
+    
 	
 fi
 
@@ -3393,32 +3632,57 @@ if [ "$DO_RUBY" = "true" ]; then
 fi
 
 
-#The Azure cloud part
+#The Microsoft cloud part
 
-if [ "$DO_AZURE" = "true" ]; then
+if [ "$DO_MICROSOFT" = "true" ]; then
 
-    echo "#Doing Azure Cloud"
+    echo "#Doing Microsoft things (Windows APIs/Powershell/Azure Cloud etc.)"
+    
+    # Azure
 	
     search "Azure has an Azure Resource Manager PowerShell cmdlet to store credentials in a JSON file. TokenCache is one of the keywords." \
     'TokenCache' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "TokenCache" \
-    "3_azure_TokenCache.txt"
+    "3_microsoft_TokenCache.txt"
     
     search "Azure has an Azure Resource Manager PowerShell cmdlet to store credentials in a JSON file. PublishSettingsFileUrl is one of the keywords." \
     'PublishSettingsFileUrl' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "PublishSettingsFileUrl" \
-    "3_azure_PublishSettingsFileUrl.txt"
+    "3_microsoft_PublishSettingsFileUrl.txt"
     
     search "Azure has an Azure Resource Manager PowerShell cmdlet to store credentials in a JSON file. ManagementPortalUrl is one of the keywords." \
     'ManagementPortalUrl' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "ManagementPortalUrl" \
-    "3_azure_ManagementPortalUrl.txt"
+    "3_microsoft_ManagementPortalUrl.txt"
+    
+    # Windows API
+    
+    search "X509Certificate2 is a class that can be used to open a p12 cert/private key file and pass the password to the constructor, see https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.x509certificates.x509certificate2.-ctor?view=net-8.0" \
+    'X509Certificate2(filename, password, foo)' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "X509Certificate2\(" \
+    "2_microsoft_X509Certificate2.txt"
+    
 	
 fi
 
+#The golang (go) language specific stuff
+if [ "$DO_GO" = "true" ]; then
+    search "os.DirFS creates a file system for a specific directory, make sure that it's fine if that entire direcotry is served as a directory listing if you expose it via HTTP. Let's assume we have /one/two, code like e.GET(\"/two/*\", echo.WrapHandler(http.FileServer(http.FS(os.DirFS(\"/one\"))))) will expose the entire /one directory. GET /two/foo.txt will server /one/two/foo.txt, but GET /two/%2e%2e/ will do a directory listing of /one/. " \
+    'e.GET("/public/*", echo.WrapHandler(http.FileServer(http.FS(os.DirFS("/var/www/webroot/static-files")))))' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "http\.FS\(os.DirFS\(" \
+    "2_go_http_fileserver_fs.txt"
+    
+    search "os.DirFS creates a file system for a specific directory, make sure that it's fine if that entire direcotry is served as a directory listing if you expose it via HTTP. Let's assume we have /one/two, code like e.GET(\"/two/*\", echo.WrapHandler(http.FileServer(http.FS(os.DirFS(\"/one\"))))) will expose the entire /one directory. GET /two/foo.txt will server /one/two/foo.txt, but GET /two/%2e%2e/ will do a directory listing of /one/. " \
+    'http.FileServer(http.FS(os.DirFS("/var/www/webroot/static-files"))))' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "http\.FS\(" \
+    "3_go_http_fs.txt"
+fi
 
 #The C and C-derived languages specific stuff
 if [ "$DO_C" = "true" ]; then
@@ -3543,7 +3807,7 @@ if [ "$DO_C" = "true" ]; then
     'warn(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'warnx?c?\(' \
-    "4_c_insecure_c_functions_warnx.txt"
+    "6_c_insecure_c_functions_warnx.txt"
     
     search "Buffer overflows and format string vulnerable methods: syslog() family such as vsyslog()." \
     'syslog(' \
@@ -3610,39 +3874,43 @@ if [ "$DO_C" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "te?mpnam\(" \
     "3_c_tmpnam.txt"
+	
+    search "ctime, ctime_r, asctime and asctime_r are in banned.h" \
+    'asctime_r()' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "ctime_?r?\(" \
+    "3_c_ctime.txt"
+	
+    search "localtime is in banned.h" \
+    'localtime()' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "localtime\(" \
+    "3_c_localtime.txt"
+	
+    search "gmtime is in banned.h" \
+    'gmtime()' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "gmtime\(" \
+    "3_c_gmtime.txt"
+	
+    search "strtok and strtok_r are in banned.h" \
+    'strtok()' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "strtok_?r?\(" \
+    "3_c_strtok.txt"
     
     search "wolfTPM2 in an embedded device is used to do TPM interactions. For example wolfTPM2_CreateAndLoadKey is a function called to load the TPM key Check if the password is hard-coded." \
     'wolfTPM2_' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "wolfTPM2?_" \
     "2_c_wolftpm.txt"
-    
-fi
-
-if [ "$DO_MALWARE_DETECTION" = "true" ]; then
-    
-    echo "#Doing malware detection"
-    
-    search "Viagra search" \
-    'viagra' \
+	
+    search "Erase, either a function that erases something or an iterator invalidation rule https://kera.name/articles/2011/06/iterator-invalidation-rules-c0x/ which can lead to use-after-free, see also https://blog.trailofbits.com/2020/10/09/detecting-iterator-invalidation-with-codeql/ . Often it is used within a loop. The method erase() returns an iterator. If the return value is not used but further iteration happens, the code is likely vulnerable. The code is not vulnerable if the iterator is not used afterwards, for example when first, a find() is performed and then an erase and no further iteration happens. Invalidation does not matter then." \
+    'erase(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'viagra' \
-    "5_malware_viagra.txt" \
-    "-i"
+    "erase\(" \
+    "3_c_erase.txt"
     
-    search "Pharmacy" \
-    'pharmacy' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'pharmacy' \
-    "5_malware_pharmacy.txt" \
-    "-i"
-    
-    search "Drug" \
-    'drug' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    'drug' \
-    "5_malware_drug.txt" \
-    "-i"
 fi
 
 #The crypto and credentials specific stuff (language agnostic)
@@ -3683,12 +3951,82 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     'CRC32' \
     "4_cryptocred_ciphers_crc32.txt" \
     "-i"
+	
+    search "PBE cipher, e.g. in Java. Security depends heavily on usage and what is secured." \
+    'PBEWithHmacSHA512AndAES_256' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'PBEWith' \
+    "3_cryptocred_ciphers_pbewith.txt"
+    
+    search "AES cipher in ECB mode, e.g. in Java. Security depends heavily on usage and what is secured." \
+    'Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'AES/ECB' \
+    "3_cryptocred_ciphers_aes_ecb.txt"
+	
+    search "Blowfish cipher. Security depends heavily on usage and what is secured." \
+    'Blowfish' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'blowfish' \
+    "3_cryptocred_ciphers_blowfish.txt" \
+	"-i"
+	
+    search "ChaCha20 cipher. Security depends heavily on usage and what is secured." \
+    'ChaCha20' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'ChaCha20' \
+    "3_cryptocred_ciphers_chacha20.txt" \
+	"-i"
+	
+    search "DESede cipher. Security depends heavily on usage and what is secured." \
+    'DESede' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'DESede' \
+    "2_cryptocred_ciphers_desede.txt" \
+	"-i"
+	
+    search "DiffieHellman key exchange. Security depends heavily on usage and what is secured." \
+    'DiffieHellman' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'DiffieHellman' \
+    "3_cryptocred_ciphers_diffiehellman.txt" \
+	"-i"
+	
+    search "AES cipher in CBC mode, e.g. in Java. Security depends heavily on usage and what is secured." \
+    'Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'AES/CBC' \
+    "2_cryptocred_ciphers_aes_cbc.txt"
+	
+    search "AES cipher in ECB mode, e.g. in Java. Security depends heavily on usage and what is secured." \
+    'Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'AES/ECB' \
+    "2_cryptocred_ciphers_aes_cbc.txt"
+	
+    search "DES cipher in CBC mode, e.g. in Java. Security depends heavily on usage and what is secured." \
+    'Cipher cipher = Cipher.getInstance("DES/CBC/PKCS5Padding");' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'DES/CBC' \
+    "1_cryptocred_ciphers_des_cbc.txt"
+	
+    search "DES cipher in ECB mode, e.g. in Java. Security depends heavily on usage and what is secured." \
+    'Cipher cipher = Cipher.getInstance("DES/ECB/PKCS5Padding");' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'DES/ECB' \
+    "1_cryptocred_ciphers_des_ecb.txt"
     
     search "DES cipher. Security depends heavily on usage and what is secured." \
     'DES' \
     'DESCRIPTION TRADES' \
     'DES' \
     "7_cryptocred_ciphers_des.txt"
+	
+    search "DSA - Digital Signature Algorithm. Security depends heavily on usage and what is secured." \
+    'DSA' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'DSA' \
+    "7_cryptocred_ciphers_dsa.txt"
     
     search "MD2. Security depends heavily on usage and what is secured." \
     'MD2' \
@@ -3860,6 +4198,20 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     'pass.?wo?r?d' \
     "4_cryptocred_password.txt" \
     "-i"
+	
+    search "Password and variants of it" \
+    'password: hakunamatatawhatawoderfulphrase' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'password:' \
+    "2_cryptocred_password_colon_narrow.txt" \
+    "-i"
+	
+    search "Password and variants of it" \
+    'password=hakunamatatawhatawoderfulphrase' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'password=' \
+    "2_cryptocred_password_equals_narrow.txt" \
+    "-i"
     
     search "Password verification methods, interesting to see if timing " \
     'verifyPassword' \
@@ -3943,6 +4295,12 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "useradd " \
     "2_cryptocred_useradd.txt"
+    
+    search "Adding a new user in Dockerfiles for Wildfly. Wildfly has a add-user.sh." \
+    'add-user.sh -u username -p password' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "add-user.sh" \
+    "2_cryptocred_adduser_sh.txt"
     
     search "Insecure registry file specifying that anonymous upload via FTP is possible." \
     '"AllowAnonymous"=dword:00000001 and "AllowAnonymousUpload"=dword:00000001' \
@@ -4058,7 +4416,21 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     'use ssl' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "use.{0,$WILDCARD_SHORT}SSL" \
-    "4_cryptocred_ssl_usage_use-ssl.txt" \
+    "4_cryptocred_ssl_usage_use-ssl_wide.txt" \
+    "-i"
+	
+    search "SSL usage with useSSL" \
+    'useSSL=' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "useSSL" \
+    "3_cryptocred_ssl_usage_use-ssl_narrow.txt" \
+    "-i"
+	
+    search "SSL usage with useSSL" \
+    'useSSL=' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "useSSL=" \
+    "2_cryptocred_ssl_usage_use-ssl_very_narrow.txt" \
     "-i"
     
     search "TLS usage with require TLS" \
@@ -4121,6 +4493,12 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     "openssl enc" \
     "2_cryptocred_openssl_enc.txt"
     
+    search "AES init context invocation that requires passing the AES key" \
+    'AES_init_ctx' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "AES_init_ctx" \
+    "2_cryptocred_AES_init_ctx.txt"
+    
     search "OpenSSL command line parameter pkcs12 for storing keys" \
     'openssl pkcs12' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -4163,12 +4541,18 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     "openssl s_server" \
     "3_cryptocred_openssl_s_server.txt"
 	
+    search "x509 certificates" \
+    'x509' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "x509" \
+    "2_cryptocred_x509.txt"
+	
 	
 fi
 
 if [ "$DO_API_KEYS" = "true" ]; then
     
-    echo "#Doing API keys"
+    echo "#Doing API keys - Please use trufflehog for this, it works similar to CRASS but is better with credentials/API keys etc."
     
     search "Slack API keys" \
     'xoxp-683201246722-694612795216-829330901254-7ec6cd4f9686bc6dce91f9d81f717dbf' \
@@ -4726,19 +5110,19 @@ if [ "$DO_GENERAL" = "true" ]; then
     'place = "/etc/softwareupdate"' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "[\"']/etc/" \
-    "3_general_etc_dir.txt"
+    "4_general_etc_dir.txt"
     
     search "Configuration files in /mnt/" \
     'place = "/mnt/softwareupdate"' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "[\"']/mnt/" \
-    "3_general_mnt_dir.txt"
+    "4_general_mnt_dir.txt"
     
     search "Reading values from /proc/" \
     'place = "/proc/softwareupdate"' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "[\"']/proc/" \
-    "3_general_proc_dir.txt"
+    "4_general_proc_dir.txt"
     
     search "pipeline: Command execution?" \
     'pipeline(' \
@@ -4768,7 +5152,28 @@ if [ "$DO_GENERAL" = "true" ]; then
     "5_general_popen_wide.txt" \
     "-i"
     
-    search "spawn: Command execution?" \
+    search "exec.Command: Command execution? See also BatBadBut problem at https://flatt.tech/research/posts/batbadbut-you-cant-securely-execute-commands-on-windows/" \
+    'cmd := exec.Command("test.exe", "arg1", "arg2")' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "exec.Command" \
+    "3_general_execCommand.txt" \
+    "-i"
+    
+    search "CreatePocessW: Command execution? See also BatBadBut problem at https://flatt.tech/research/posts/batbadbut-you-cant-securely-execute-commands-on-windows/" \
+    'CreateProcessW(nullptr, arguments, nullptr, nullptr, false, 0, nullptr, nullptr, &si, &pi);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "CreateProcessW" \
+    "3_general_CreateProcessW.txt" \
+    "-i"
+    
+    search "CreatePocess: Command execution? See also BatBadBut problem at https://flatt.tech/research/posts/batbadbut-you-cant-securely-execute-commands-on-windows/" \
+    'CreateProcessW(nullptr, arguments, nullptr, nullptr, false, 0, nullptr, nullptr, &si, &pi);' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "CreateProcess" \
+    "4_general_CreateProcess.txt" \
+    "-i"
+    
+    search "spawn: Command execution? See also BatBadBut problem at https://flatt.tech/research/posts/batbadbut-you-cant-securely-execute-commands-on-windows/" \
     'spawn(' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "spawn\s{0,$WILDCARD_SHORT}\(" \
@@ -4973,20 +5378,6 @@ if [ "$DO_GENERAL" = "true" ]; then
     "5_general_bypass.txt" \
     "-i"
     
-    search "Backdoor. Sounds suspicious, why would anyone ever use this word?" \
-    'back-door' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "back.{0,$WILDCARD_SHORT}door" \
-    "3_general_backdoor.txt" \
-    "-i"
-    
-    search "Backd00r. Sounds suspicious, why would anyone ever use this word?" \
-    'back-d00r' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    "back.{0,$WILDCARD_SHORT}d00r" \
-    "5_general_backd00r.txt" \
-    "-i"
-    
     search "Fake. Sounds suspicious." \
     'fake:' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
@@ -5058,6 +5449,34 @@ if [ "$DO_GENERAL" = "true" ]; then
     'jdbc:' \
     "3_general_jdbc_uri.txt" \
     "-i"
+	
+    search "Server-Side Template Injection (SSTI) is a possibility at many places https://portswigger.net/web-security/server-side-template-injection" \
+    "<div bar:foo=\"@{'/0example?yes=\${someparam}'}\"></div>" \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "<.{0,$WILDCARD_LONG}\\{[^\\}]{0,$WILDCARD_LONG}\\{[^\\}]{0,$WILDCARD_LONG}\\}" \
+    "3_general_ssti_double_narrow.txt" \
+    "-i"
+	
+    search "Server-Side Template Injection (SSTI) is a possibility at many places https://portswigger.net/web-security/server-side-template-injection" \
+    "<div bar:foo=\"@{{someparam}}\"></div>" \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "<.{0,$WILDCARD_LONG}\\{\\{.{0,$WILDCARD_LONG}\\}\\}" \
+    "4_general_ssti_html_double_braces_wide.txt" \
+    "-i"
+	
+    search "Server-Side Template Injection (SSTI) is a possibility at many places https://portswigger.net/web-security/server-side-template-injection" \
+    "<div bar:foo=\"@{'/foo/bar/__\${someparam}__'}\"></div>" \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "@\\{.{0,$WILDCARD_LONG}__\\\$\\{.{0,$WILDCARD_LONG}\\}__.{0,$WILDCARD_LONG}\\}" \
+    "2_general_ssti_html_double_braces_dollar_narrow.txt" \
+    "-i"
+	
+    search "Server-Side Template Injection (SSTI) is a possibility at many places https://portswigger.net/web-security/server-side-template-injection" \
+    "{{someparam}}" \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "\\{\\{.{0,$WILDCARD_LONG}\\}\\}" \
+    "5_general_ssti_double_braces_wide.txt" \
+    "-i"
     
     search "Variatons of SQL injection found in a web application the wild: Using string format instead of SqlParameter leading to non-prepared SQL statement which is later executed" \
     '"SELECT * FROM [a].[b] ab ORDER BY %s"' \
@@ -5083,7 +5502,7 @@ if [ "$DO_GENERAL" = "true" ]; then
     search "Generic database connection string for various databases. See https://www.connectionstrings.com/sql-server/ for different connection strings." \
     'Data Source=myServerAddress;Initial Catalog=myDataBase;Integrated Security=SSPI;User ID=myDomain\myUsername;Password=myPassword;' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
-    ";Password=" \
+    "Password=" \
     "1_general_con_str_sql_password.txt" \
     "-i"
     
@@ -5386,28 +5805,28 @@ if [ "$DO_GENERAL" = "true" ]; then
     'Stupid!' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'stupid' \
-    "4_general_swear_stupid.txt" \
+    "5_general_swear_stupid.txt" \
     "-i"
     
     search "Fuck: Swear words are often used when things don't work as intended by the developer. X-)" \
     'Fuck!' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'fuck' \
-    "4_general_swear_fuck.txt" \
+    "5_general_swear_fuck.txt" \
     "-i"
     
     search "Shit and bullshit: Swear words are often used when things don't work as intended by the developer." \
     'Shit!' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'shit' \
-    "4_general_swear_shit.txt" \
+    "5_general_swear_shit.txt" \
     "-i"
     
     search "Crap: Swear words are often used when things don't work as intended by the developer." \
     'Crap!' \
-    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'scrape' \
     'crap' \
-    "4_general_swear_crap.txt" \
+    "5_general_swear_crap.txt" \
     "-i"
     
     #IP-Adresses
@@ -5448,10 +5867,134 @@ if [ "$DO_GENERAL" = "true" ]; then
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     "sleep" \
     "7_general_sleep_generic.txt" \
-    "-i"
+    "-i"	
     
 fi
 
+# Security issues can have many sources, often it is neglect of security topics, but it can also be malintent.
+# We're only trying to catch fools here. We're not looking for backdoors in DWARF in ELF binaries...
+if [ "$DO_BACKDOOR" = "true" ]; then
+	
+    echo "#Doing backdoor/malware/infected machine detection"
+	
+    search "Backdoor. Sounds suspicious, why would anyone ever use this word?" \
+    'back-door' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "back.{0,$WILDCARD_SHORT}door" \
+    "3_backdoor_backdoor.txt" \
+    "-i"
+    
+    search "Backd00r. Sounds suspicious, why would anyone ever use this word?" \
+    'back-d00r' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "back.{0,$WILDCARD_SHORT}d00r" \
+    "3_backdoor_backd00r.txt" \
+    "-i"
+	
+    search "It's very easy to construct a backdoor in Java with Unicode \u characters, even within multi line comments, see http://pastebin.com/iGQhuUGd and https://portswigger.net/research/hiding-payloads-in-java-source-code-strings ." \
+    'var log4jpayload = "%24%7Bjndi:ldap://psres.net/\\u0022;Runtime.getRuntime().exec(\u0022open -a calculator\u0022);//%7D";' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\\u0022' \
+    "3_backdoor_as_unicode_narrow_22_string_escape.txt" \
+    "-i"
+	
+    search "It's very easy to construct a backdoor in Java with Unicode \u characters, even within multi line comments, see http://pastebin.com/iGQhuUGd and https://portswigger.net/research/hiding-payloads-in-java-source-code-strings ." \
+    'init(); /* This is just a comment \u002a\u002f untime.getRuntime().exec("say WTF"); \u002f\u002a' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\\u002a\\u002f' \
+    "3_backdoor_as_unicode_narrow_2a2f_multiline_comment_escape.txt" \
+    "-i"
+	
+    search "It's very easy to construct a backdoor in Java with Unicode \u characters, even within multi line comments, see http://pastebin.com/iGQhuUGd and https://portswigger.net/research/hiding-payloads-in-java-source-code-strings ." \
+    'System.out.println("\u0058\u0022\u0029\u003b\u0052\u0075\u006e\u0074\u0069\u006d\u0065\u002e\u0067\u0065\u0074\u0052\u0075\u006e\u0074\u0069\u006d\u0065\u0028\u0029\u002e\u0065\u0078\u0065\u0063\u0028\u0022\u0073\u0061\u0079\u0020\u0057\u0054\u0046\u0022\u0029\u003b\u0053\u0079\u0073\u0074\u0065\u006d\u002e\u006f\u0075\u0074\u002e\u0070\u0072\u0069\u006e\u0074\u006c\u006e\u0028\u0022\u0045\u006e\u0064\u0020\u0054\u0065\u0073\u0074");' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\\u00..\\u00..' \
+    "5_backdoor_as_unicode_wide.txt" \
+    "-i"
+    
+    search "Viagra, infected machines are often used for spam and scam and illegal drug schemes" \
+    'viagra' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'viagra' \
+    "7_backdoor_viagra.txt" \
+    "-i"
+    
+    search "Pharmacy, infected machines are often used for spam and scam and illegal drug schemes" \
+    'pharmacy' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'pharmacy' \
+    "7_backdoor_pharmacy.txt" \
+    "-i"
+    
+    search "Drug, infected machines are often used for spam and scam and illegal drug schemes" \
+    'drug' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    'drug' \
+    "7_backdoor_drug.txt" \
+    "-i"
+	
+	#LRE, U+202A, Left-to-Right Embedding, Try treating following text as left-to-right.
+	#RLE, U+202B, Right-to-Left Embedding, Try treating following text as right-to-left.
+	#LRO, U+202D, Left-to-Right Override, Force treating following text as left-to-right.
+	#RLO, U+202E, Right-to-Left Override, Force treating following text as right-to-left.
+	#LRI, U+2066, Left-to-Right Isolate, Force treating following text as left-to-right without affecting adjacent text.
+	#RLI, U+2067, Right-to-Left Isolate, Force treating following text as right-to-left without affecting adjacent text.
+	#FSI, U+2068, First Strong Isolate, Force treating following text in direction indicated by the next character.
+	#PDF, U+202C, Pop Directional Formatting, Terminate nearest LRE, RLE, LRO, or RLO.
+	#PDI, U+2069, Pop Directional Isolate, Terminate nearest LRI or RLI.
+	
+	# ATTENTION: THIS EXAMPLE STRING HAS VARIOUS CRAZY UNICODE CHARACTERS!!!
+    search "The example is '/*RLO | LRIif (isAdmin)PDI LRI begin admins only */', where RLO = 'U+202E, Right-to-Left Override, Force treating following text as right-to-left', LRI = 'U+2066, Left-to-Right Isolate, Force treating following text as left-to-right without affecting adjacent text' and PDI ='U+2069, Pop Directional Isolate, Terminate nearest LRI or RLI'. See https://trojansource.codes/trojan-source.pdf and https://github.com/nickboucher/trojan-source/blob/main/RegEx/pcre2.regex" \
+    '/*‮ | ⁦if (isAdmin)⁩ ⁦ begin admins only */' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '(?(DEFINE)(?<pdi>([^\x{2067}\x{2066}\x{2068}]*)([^\x{2067}\x{2066}\x{2068}\x{2069}]*)((?-2)[\x{2067}\x{2066}\x{2068}](?-2)(?-1)*(?-2)[\x{2069}](?-2))*(?-3)[\x{2067}\x{2066}\x{2068}]+?(?-2)*)(?<pdf>([^\x{202B}\x{202A}\x{202E}\x{202D}]*)([^\x{202B}\x{202A}\x{202E}\x{202D}\x{202C}]*)((?-2)[\x{202B}\x{202A}\x{202E}\x{202D}](?-2)(?-1)*(?-2)[\x{202C}](?-2))*(?-3)[\x{202B}\x{202A}\x{202E}\x{202D}]+?(?-2)*)(?<unbal>(?&pdi)|(?&pdf))(?<string>(?:\x{27}(?&unbal)\x{27})|(?:"(?&unbal)"))(?<comment>(?:\/\*(?&unbal)\*\/)|(?:\/\/(?&unbal)$)|(?:#(?&unbal)$)))(?&string)|(?&comment)' \
+    "3_backdoor_trojan_source_regex.txt" \
+    "-i"
+	
+	# ATTENTION: THIS EXAMPLE STRING HAS AN INVISIBLE ZWSP IN THE MIDDLE!!!
+    search "The example is '/ZWSP*', where ZWSP='U+200B, Zero Width Space', it's an invisible character so you won't see it below, because in code it might be invisible but between // or /* it might deactivate a comment" \
+    '/​*' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+	'\x{200B}' \
+    "3_backdoor_zwsp.txt" \
+    "-i"
+	
+    search "Find non-latin alphabet character strings of at least length 3, can catch homoglyph attacks, backdoor comments" \
+    'ศึกษา.ไทย    католик' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "[\p{Arabic}\p{Armenian}\p{Bengali}\p{Bopomofo}\p{Braille}\p{Buhid}\p{Canadian_Aboriginal}\p{Cherokee}\p{Cyrillic}\p{Devanagari}\p{Ethiopic}\p{Georgian}\p{Greek}\p{Gujarati}\p{Gurmukhi}\p{Han}\p{Hangul}\p{Hanunoo}\p{Hebrew}\p{Hiragana}\p{Inherited}\p{Kannada}\p{Katakana}\p{Khmer}\p{Lao}\p{Limbu}\p{Malayalam}\p{Mongolian}\p{Myanmar}\p{Ogham}\p{Oriya}\p{Runic}\p{Sinhala}\p{Syriac}\p{Tagalog}\p{Tagbanwa}\p{TaiLe}\p{Tamil}\p{Telugu}\p{Thaana}\p{Thai}\p{Tibetan}]{3}" \
+    "6_backdoor_non-latin-characters_narrow.txt" \
+    "-i"
+	
+    search "Find non-latin alphabet character strings of at least length 1, can catch homoglyph attacks, backdoor comments" \
+    'ศึกษา.ไทย    католик' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "[\p{Arabic}\p{Armenian}\p{Bengali}\p{Bopomofo}\p{Braille}\p{Buhid}\p{Canadian_Aboriginal}\p{Cherokee}\p{Cyrillic}\p{Devanagari}\p{Ethiopic}\p{Georgian}\p{Greek}\p{Gujarati}\p{Gurmukhi}\p{Han}\p{Hangul}\p{Hanunoo}\p{Hebrew}\p{Hiragana}\p{Inherited}\p{Kannada}\p{Katakana}\p{Khmer}\p{Lao}\p{Limbu}\p{Malayalam}\p{Mongolian}\p{Myanmar}\p{Ogham}\p{Oriya}\p{Runic}\p{Sinhala}\p{Syriac}\p{Tagalog}\p{Tagbanwa}\p{TaiLe}\p{Tamil}\p{Telugu}\p{Thaana}\p{Thai}\p{Tibetan}]{1}" \
+    "8_backdoor_non-latin-characters_wide.txt" \
+    "-i"
+	
+    search "Extract can be dangerous and could be used as backdoor, see http://blog.sucuri.net/2014/02/php-backdoors-hidden-with-clever-use-of-extract-function.html#null" \
+    'extract(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "extract\s{0,$WILDCARD_SHORT}\(" \
+    "5_backdoor_php_extract.txt" \
+    "-i"
+    
+    search "Assert can be used as backdoor, see http://rileykidd.com/2013/08/21/the-backdoor-you-didnt-grep/" \
+    'assert(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "assert\s{0,$WILDCARD_SHORT}\(" \
+    "6_backdoor_php_assert.txt" \
+    "-i"
+    
+    search "Preg_replace can be used as backdoor, see http://labs.sucuri.net/?note=2012-05-21" \
+    'preg_replace(' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "preg_replace\s{0,$WILDCARD_SHORT}\(" \
+    "6_backdoor_php_preg_replace.txt" \
+    "-i"
+	
+fi
 
 if [ "$BACKGROUND" = "true" ]; then
     #Let's wait until all jobs are done

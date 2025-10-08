@@ -4131,7 +4131,13 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     'MD5' \
     'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
     'MD5' \
-    "5_cryptocred_ciphers_md5.txt"
+    "5_cryptocred_ciphers_md5_wide.txt"
+	
+    search "MD5. Security depends heavily on usage and what is secured." \
+    '_MD5_' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '[^a-zA-Z0-9]MD5[^a-zA-Z0-9]' \
+    "3_cryptocred_ciphers_md5_narrow.txt"
     
     search "SHA1. Security depends heavily on usage and what is secured." \
     'SHA1' \
@@ -4193,6 +4199,42 @@ if [ "$DO_CRYPTO_AND_CREDENTIALS" = "true" ]; then
     'hash(?!(table|map|set|code))' \
     "6_cryptocred_hash.txt" \
     "-i"
+	
+    search "16 bytes in Hex. Could be MD5 hash." \
+    'pass="0800fc577294c34e0b28ad2839435945"' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '[^a-zA-Z0-9]([a-fA-F0-9]{32})[^a-zA-Z0-9]' \
+    "3_cryptocred_16_bytes_hex.txt"
+	
+    search "MySQL old style hash" \
+    'pass="6f8c114b58f2ce9e"' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '[0-7][0-9a-f]{7}[0-7][0-9a-f]{7}' \
+    "3_cryptocred_mysql_old_hashes.txt"
+	
+    search "Blowfish hash" \
+    'pass="$2a$05$LhayLxezLhK1LhWvKxCyLOj0j1u.Kj0jZ0pEmm134uzrQlFvQJLF6"' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\$2a\$0[0-9]\$[a-zA-Z0-9.]{0,100}' \
+    "2_cryptocred_blowfish_hashes.txt"
+	
+    search "2y crypt scheme ID for a variant of bcrypt/blowfish" \
+    'pass="$2y$10$zUGqDlav79krrlQVwDeYNOkG3BjmeGhDGD3OfHFI1L3OOL4CRRMsW"' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\$2y\$[0-9]{2}\$[a-zA-Z0-9.]{0,100}' \
+    "2_cryptocred_crypt_bcrypt_blowfish_hashes.txt"
+	
+    search "All kind of hashes like Wordpress-MD5, Drupal 7, Unix-MD5" \
+    'pass="$P$Bp.ZDNMM98mGNxCtHSkc1DqdRPXeoR."' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\$[PHS16]\$[A-Za-z0-9.]{20}' \
+    "3_cryptocred_various_hashes.txt"
+	
+    search "All kind of hashes like md5-apr1" \
+    'pass="$apr1$Bp.ZDNMM98mGNxCtHSkc1DqdRPXeoR."' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    '\$apr1\$[A-Za-z0-9.]{20}' \
+    "3_cryptocred_various_hashes_apr1.txt"
     
     search 'Find *nix passwd or shadow files.' \
     '_xcsbuildagent:*:239:239:Xcode Server Build Agent:/var/empty:/usr/bin/false' \
@@ -5067,6 +5109,12 @@ fi
 if [ "$DO_GENERAL" = "true" ]; then
     
     echo "#Doing general"
+    
+    search "Extract URLs." \
+    'https://foo.bar/blabla' \
+    'FALSE_POSITIVES_EXAMPLE_PLACEHOLDER' \
+    "https?://[a-z0-9.:-]{4,$WILDCARD_SHORT}/" \
+    "2_general_urls.txt"
     
     search "A generic templating pattern that is used in HTML generation of Java (JSP), Ruby and client-side JavaScript libraries." \
     'In Java <%=bean.getName()%> or in ruby <%= parameter[:value] %>' \

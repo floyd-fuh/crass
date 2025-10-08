@@ -60,31 +60,38 @@ do
     find "$DIR" -depth -iname '*.gz' -exec echo '#Unpacking {}' \; -execdir $GZIP_CMD -d '{}' \; -delete
 
     if [ "$DECOMPILE_POSSIBLE" = true ] ; then
-        #TODO: At the moment jd-core does not support war files, although it's exactly the same as a jar file, see bug report at https://github.com/nviennot/jd-core-java/issues/24
-        #echo "#decompiling all war files"
-        ##We need to find ./java-decompile.sh, so no execdir here
-        ##We don't delete them, as we also need the rest of the (meta) data (not only class files in decompiled form)
-        #find "$DIR" -depth -iname '*.war' -exec echo '#Decompiling {}' \; -exec $JAR_DECOMPILE '{}' \;
+        echo "#decompiling all war files"
+        #We need to find ./java-decompile.sh, so no execdir here
+        #We don't delete them, as we also need the rest of the (meta) data (not only class files in decompiled form)
+        find "$DIR" -depth -iname '*.war' -exec echo '#Decompiling {}' \; -exec $JAR_DECOMPILE '{}' \; -delete
+		
+		# TODO:
+		# For Java projects it would be good to have a mechanism to not decompile all jar files that are Maven central dependencies
+		# The jars are usually easy to spot manually:
+		# - Maven central dependencies have often an old "Last modified" date compared to internal dependencies
+		# - Local jars often have an empty file /META-INF/beans.xml in them
+		# - Local jars often have a short (e.g. 4 lines) /META-INF/MANIFEST.MF in them
+		# - Maven central dependencies often have something like "Specification-Vendor: Google" or "Implementation-Vendor: Google" in /META-INF/MANIFEST.MF
+		# - We can search for the dependencies on Maven central...
 
         echo "#decompiling all jar files"
         #We need to find ./java-decompile.sh, so no execdir here
         #We don't delete them, as we also need the rest of the (meta) data (not only class files in decompiled form)
-        find "$DIR" -depth -iname '*.jar' -exec echo '#Decompiling {}' \; -exec $JAR_DECOMPILE '{}' \;
+        find "$DIR" -depth -iname '*.jar' -exec echo '#Decompiling {}' \; -exec $JAR_DECOMPILE '{}' \; -delete
 
-        #jd-core does not support decompilation of a single class file directly, it must be in a jar *sigh*
-        #What this means at the moment is that you have to pack them into a jar file :(
-        #Side note: You can just pack an *entire* directory into one jar file and jd-core will happily decompile all contained class files
-        #echo "#handling all class files and delete afterwards"
-        ##We need to find ./java-decompile.sh, so no execdir here
-        #find "$DIR" -depth -iname '*.class' -exec echo '#Unpacking/Decompiling {}' \; -exec $JAR_DECOMPILE '{}' \; -delete
+        echo "#handling all class files and delete afterwards"
+        #We need to find ./java-decompile.sh, so no execdir here
+        find "$DIR" -depth -iname '*.class' -exec echo '#Unpacking/Decompiling {}' \; -exec $JAR_DECOMPILE '{}' \; -delete
+		
+	else
+	    echo "#unpacking all war files and delete afterwards"
+	    find "$DIR" -depth -iname '*.war' -exec echo '#Unpacking {}' \; -execdir $JAR_CMD xf '{}' \; -delete
+
+	    echo "#unpacking all jar files and delete afterwards"
+	    find "$DIR" -depth -iname '*.jar' -exec echo '#Unpacking {}' \; -execdir $JAR_CMD xf '{}' \; -delete
+	    
     fi
-
-    echo "#unpacking all war files and delete afterwards"
-    find "$DIR" -depth -iname '*.war' -exec echo '#Unpacking {}' \; -execdir $JAR_CMD xf '{}' \; -delete
-
-    echo "#unpacking all jar files and delete afterwards"
-    find "$DIR" -depth -iname '*.jar' -exec echo '#Unpacking {}' \; -execdir $JAR_CMD xf '{}' \; -delete
-
+	
     echo "#converting all apk files to jar and delete afterwards"
     find "$DIR" -depth -iname '*.apk' -exec echo '#Converting {}' \; -execdir $D2J_CMD '{}' \; -delete
 
